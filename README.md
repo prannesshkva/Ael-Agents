@@ -1,74 +1,248 @@
-Ael-Agents: Trainable Jacobian-RSA Cortical Architecture for Precision Therapeutics
-===================================================================================
+Ael-Agents: Trainable Jacobian-RSA Multi-Agent Framework
+========================================================
 
 [![DOI](https://img.shields.io/badge/DOI-10.17605%2FOSF.IO%2F7R46Z-blue.svg)](https://doi.org/10.17605/OSF.IO/7R46Z)
 [![License: CC BY-NC-ND 4.0](https://img.shields.io/badge/License-CC_BY--NC--ND_4.0-lightgrey.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-3776AB.svg)](https://www.python.org/)
-[![PyTorch](https://img.shields.io/badge/PyTorch-Autograd_Jacobian-EE4C2C.svg)](https://pytorch.org/)
+[![PyTorch](https://img.shields.io/badge/PyTorch-Differentiable_Routing-EE4C2C.svg)](https://pytorch.org/)
 [![RDKit](https://img.shields.io/badge/Cheminformatics-RDKit_Validated-2E8B57.svg)](https://www.rdkit.org/)
 [![SciPy ODE](https://img.shields.io/badge/Pharmacokinetics-SciPy_ODE-8CAAE6.svg)](https://scipy.org/)
 [![LangSmith](https://img.shields.io/badge/LangSmith-Public_Trace-1C3C3C.svg)](https://smith.langchain.com/public/71010a71-b6cf-4e07-b6db-2d3553ad4a3a/r)
 
-**Ael-Agents** is a biomimetic, token-efficient multi-agent reasoning framework modeled on the human triple-network cortical hierarchy—**Default Mode Network (DMN)**, **Salience Network (SN)**, and **Central Executive Network (CEN)**—coupled with offline **Dream-RSI** (Recursive Self-Improvement) consolidation.
+**Ael-Agents** is a **trainable, token-bounded multi-agent reasoning framework** built for Agentic AI engineers, ML researchers, and scientific R&D teams who need mathematical control over how specialist agents coordinate, route context, and self-improve.
 
-Rather than running unconstrained multi-agent swarms that burn 30,000+ tokens per query with heuristic voting, **Ael-Agents** segregates **Computational Drug Discovery & Quantitative Systems Pharmacology** into 4 orthogonal domain specialists, maps their outputs into a 768-dimensional neural semantic manifold (`BAAI/bge-base-en-v1.5`), computes the 4×4 **Representational Dissimilarity Matrix (RDM)**, and uses exact **PyTorch autograd Jacobian sensitivity** (|∂L / ∂w_i|) to gate only the top k = 2 working-memory specialists into executive synthesis at **zero LLM token overhead** (~2,200 tokens/run, a **93.7% token reduction**).
+Most multi-agent frameworks treat orchestration as ad-hoc prompt chaining: every agent talks to every other agent, an expensive LLM router guesses who to listen to, context windows balloon past 30,000+ tokens per query, and there are **zero trainable parameters** to optimize.
+
+**Ael-Agents** replaces heuristic swarm routing with a **differentiable PyTorch computation graph** inspired by the human triple-network cortical hierarchy—**Default Mode Network (DMN)**, **Salience Network (SN)**, and **Central Executive Network (CEN)**—paired with an offline **Dream-RSI** (`Wake → Dream → Improve`) loop:
+
+1. **1-to-1 Trainable Agent Weights (`w_1 ... w_N`)**: Each domain specialist is bound to a trainable scalar parameter in PyTorch (`DomainParameterRegistry`), optimized via gradient descent on a joint **Alignment + Cognitive Diversity (Participation Ratio) + Entropy** objective.
+2. **Representational Similarity Analysis (DMN)**: Specialist outputs are embedded into a 768-dimensional neural manifold (`BAAI/bge-base-en-v1.5`) to construct an `N × N` **Representational Dissimilarity Matrix (RDM)** and surface high-surprise cross-domain structural bridges.
+3. **Zero-Token Autograd Jacobian Gating (SN → CEN)**: Instead of calling an LLM router, the Salience Network computes exact parameter sensitivities (`J_i = |∂L_cortex / ∂w_i|`) via `torch.autograd.grad` and gates only the top `k = 2` working-memory specialists into executive synthesis—cutting token consumption by **93.7%** (~2,200 tokens/run vs. ~35,000 tokens in unconstrained swarms) at **0 LLM routing tokens**.
+4. **Vertical Domain Specialization**: Engineered out-of-the-box for **Computational Drug Discovery & Quantitative Systems Pharmacology** (validated with deterministic **RDKit** cheminformatics and **SciPy** 2-compartment PK/PD ODE solvers), while supporting custom YAML or auto-generated specialist rosters for any quantitative domain.
 
 ---
 
-Architectural Overview
-----------------------
+Why Ael-Agents for Agentic AI Engineering?
+------------------------------------------
+
+| Architectural Dimension | Standard Multi-Agent Swarms | Ael-Agents (Trainable Cortical Framework) |
+| :--- | :--- | :--- |
+| **Agent Routing Mechanism** | LLM-as-a-router prompt or static hand-coded edges | **Exact PyTorch autograd Jacobian sensitivity (`J_i = \|∂L / ∂w_i\|`)** |
+| **Routing Token Overhead** | 1,500 – 5,000+ tokens per routing step | **0 LLM tokens** (local 768-dim BGE + PyTorch matrix ops) |
+| **Context Window Scaling** | Unconstrained (`O(N)` full-panel concatenation, ~35k tokens) | **Hard `k = 2` Working-Memory Bottleneck (~2,200 tokens/run, -93.7%)** |
+| **Trainable Parameters** | None (pure prompt engineering) | **1-to-1 differentiable weights `w_i ∈ ℝ^N` trained via `UnifiedCortexLoss`** |
+| **Redundancy Detection** | None (agents frequently repeat the same points) | **`N × N` Representational Dissimilarity Matrix (RDM) + Participation Ratio** |
+| **Self-Improvement Loop** | Blind retry / unguarded self-critique (prone to overthinking) | **Offline Dream-RSI + Python Sandbox Tool Synthesis + Supermajority Lock** |
+| **Statistical Verification** | LLM-as-a-judge circular grading | **4,999-sample Monte Carlo Dirichlet stability (`mct`), RDKit, & SciPy ODEs** |
+
+---
+
+End-to-End Framework Flowchart
+------------------------------
 
 ```mermaid
-flowchart LR
-    Q["Therapeutic / Pharmacology Inquiry"] --> W["Wake Layer: 4 Orthogonal Sub-Experts (w_1 .. w_4)"]
-    W --> E["768-dim BGE Neural Manifold (BAAI/bge-base-en-v1.5)"]
-    E --> DMN["Default Mode Network (DMN): 4x4 RDM & Epistemic Surprise"]
-    DMN --> SN["Salience Network (SN): PyTorch Autograd Jacobian Gating (k=2)"]
-    SN --> CEN["Central Executive Network (CEN): Working-Memory Synthesis"]
-    CEN --> DREAM["Offline Dream-RSI: Counterfactual Consolidation & Tool Verification"]
-    DREAM --> VAL["Deterministic Validation: RDKit Compiler & SciPy 2-Compartment ODE"]
+flowchart TB
+    subgraph INPUT["1. Task & Roster Initialization"]
+        Q["User / Scientific Inquiry"]
+        R["Orthogonal Specialist Roster (N=4 Therapeutic Default or Custom YAML)"]
+        W["Trainable Cortical Weights w = (w_1 .. w_N) in PyTorch"]
+    end
+
+    subgraph WAKE["2. Parallel Wake Layer & Neural Manifold"]
+        A1["Agent w_1: StructuralBiophysics"]
+        A2["Agent w_2: SystemsPharmacology"]
+        A3["Agent w_3: MedicinalChemistryADMET"]
+        A4["Agent w_4: ClinicalPKPDControl"]
+        ENC["768-D Neural Encoder (BAAI/bge-base-en-v1.5)\nL2-Normalized Embeddings e_i in R^768"]
+    end
+
+    subgraph CORTEX["3. Zero-Token Triple-Network Cortical Routing (PyTorch)"]
+        DMN["Default Mode Network (DMN)\n4x4 RDM (D_ij = 1 - e_i^T e_j) & Epistemic Surprise Bridges"]
+        LOSS["UnifiedCortexLoss(w)\nTask Alignment + Participation Ratio Diversity + Gate Entropy"]
+        SN["Salience Network (SN)\nExact Autograd Jacobian J_i = |dL_cortex / dw_i|\nGates Top k=2 Domains into Working Memory"]
+        OPT["AdamW Gradient Step on w_1 .. w_N\n+ Monte Carlo Dirichlet Stability Test (mct, 4,999 resamples)"]
+    end
+
+    subgraph EXEC["4. Executive Synthesis & Offline Dream-RSI"]
+        CEN["Central Executive Network (CEN)\nSynthesizes ONLY k=2 Working-Memory Experts + Top DMN Bridge"]
+        GATE{"Disagreement or\nDream-RSI Enabled?"}
+        DREAM["Offline Dream-RSI Consolidation\n1. Counterfactual Bridge Replay\n2. Sandboxed Python Tool Synthesis (ToolRegistry)\n3. Weakest-Specialist Focus Evolution"]
+        VAL["Deterministic Scientific Validation\nRDKit Molecular Compiler + SciPy 2-Compartment PK/PD ODE Solver"]
+    end
+
+    Q --> A1 & A2 & A3 & A4
+    R --> A1 & A2 & A3 & A4
+    A1 & A2 & A3 & A4 --> ENC
+    ENC --> DMN
+    W --> LOSS
+    DMN --> LOSS
+    LOSS --> SN
+    SN --> OPT
+    SN -->|"Top k=2 Salient Experts + Bridge"| CEN
+    CEN --> GATE
+    GATE -->|"Consensus Lock"| VAL
+    GATE -->|"Epistemic Divergence"| DREAM
+    DREAM -->|"Candidate Replay & Gate"| VAL
 ```
 
-### 1. The 4 Orthogonal Therapeutic Sub-Experts (w_1 ... w_4)
+---
 
-| Parameter | Specialist Agent | Governing Equations & Quantitative Scope |
+How the Core Engine Works
+-------------------------
+
+### 1. Segregating a Domain into `N = 4` Orthogonal Sub-Experts
+
+Instead of spawning generic personas ("Researcher", "Critic", "Planner") whose outputs overlap in embedding space, **Ael-Agents** partitions the problem domain into orthogonal mathematical sub-spaces. For its flagship **Computational Drug Discovery & Precision Therapeutics** configuration ([`agents/domain_specialists.py`](agents/domain_specialists.py)):
+
+| Parameter | Specialist Agent | Orthogonal Quantitative Responsibility |
 | :---: | :--- | :--- |
-| `w_1` | **StructuralBiophysics** | Target pocket geometry, allosteric conformational landscapes, binding thermodynamics (`ΔG_bind = ΔH - TΔS = RT ln K_d`), covalent/reversible warhead kinetics, and drug-target residence time (`τ_R = 1 / k_off`). |
-| `w_2` | **SystemsPharmacology** | Intracellular signaling cascades, coupled pathway ODEs, cooperative Hill kinetics, MAPK/PI3K compensatory feedback resistance loops, and attractor stability. |
-| `w_3` | **MedicinalChemistryADMET** | Scaffold & warhead design, physicochemical transport (`log P`, `log D`, TPSA, membrane permeability), hepatic CYP450 clearance mechanisms, and hERG safety margins. |
-| `w_4` | **ClinicalPKPDControl** | Multi-compartment pharmacokinetic/pharmacodynamic ODEs (`CL`, `V_c`, `k_a`, `Q`, `V_p`, `C_max`, `AUC`), target occupancy (`TO(t)`), and closed-loop dosing regimens. |
+| `w_1` | **`StructuralBiophysics`** | Target pocket geometry, allosteric conformational landscapes, binding free energy (`ΔG_bind = ΔH - TΔS = RT ln K_d`), covalent/reversible warhead kinetics, and drug-target residence time (`τ_R = 1 / k_off`). |
+| `w_2` | **`SystemsPharmacology`** | Intracellular signaling cascades, coupled pathway ODEs, cooperative Hill kinetics, MAPK/PI3K compensatory feedback resistance loops, and attractor stability. |
+| `w_3` | **`MedicinalChemistryADMET`** | Molecular scaffold & warhead design, physicochemical transport (`log P`, `log D`, TPSA, membrane permeability), hepatic CYP450 clearance mechanisms, and hERG safety margins. |
+| `w_4` | **`ClinicalPKPDControl`** | Multi-compartment pharmacokinetic/pharmacodynamic ODEs (`CL`, `V_c`, `k_a`, `Q`, `V_p`, `C_max`, `AUC`), target occupancy (`TO(t)`), and closed-loop dosing regimens. |
 
-### 2. Mathematical Formulation (DMN → SN → CEN → Dream-RSI)
+### 2. Differentiable Triple-Network Routing (`DMN → SN → CEN`)
 
-1. **Default Mode Network (DMN) Representational Dissimilarity Matrix (RDM)**:
-   Each specialist hypothesis `h_i` is encoded into an L2-normalized vector `e_i ∈ ℝ⁷⁶⁸`. Pairwise cosine similarity `S_ij = e_iᵀ · e_j` defines the 4×4 RDM (`D_ij = 1 - S_ij`). Cross-domain bridges are scored by structural resonance coupled with epistemic surprise relative to domain priors:
-   
-   `I_DMN(i, j) = ((1 + S_ij) / 2) · |S_ij - S_ij_prior|`
+* **Default Mode Network (`core/rsa_engine.py`)**:
+  Encodes each specialist's hypothesis `h_i` into `e_i ∈ ℝ⁷⁶⁸`. Computes the cosine similarity matrix `S_ij = e_iᵀ · e_j` and Representational Dissimilarity Matrix `D_ij = 1 - S_ij`. Cross-domain pairs are ranked by structural resonance weighted by epistemic surprise against prior domain distances:
+  
+  `I_DMN(i, j) = ((1 + S_ij) / 2) · |S_ij - S_ij_prior|`
 
-2. **Salience Network (SN) Autograd Jacobian Gating (k = 2 Working Memory)**:
-   Each specialist is bound 1-to-1 to a trainable scalar cortical weight `w_i ∈ ℝ⁴` with softmax gating `α_i = softmax(w_i / τ)`. The Salience Network differentiates the joint alignment-diversity-entropy objective `L_cortex(w)` via `torch.autograd.grad` to obtain exact parameter sensitivities:
-   
-   `J_i = |∂L_cortex / ∂w_i|`
-   
-   Only the top k = 2 salient domains enter Working Memory for executive synthesis, requiring **0 LLM tokens** for routing and ranking.
+* **Salience Network & Autograd Jacobian Lens (`core/jacobian_lens.py`)**:
+  Computes softmax gating weights `α_i = softmax(w_i / τ)` and evaluates the differentiable cortical objective `L_cortex(w)` ([`training/loss_functions.py`](training/loss_functions.py)). Using `torch.autograd.grad`, it extracts the exact Jacobian sensitivity of the global cortical state to each specialist:
+  
+  `J_i = |∂L_cortex / ∂w_i|`
+  
+  Specialists are ranked by combined salience `α_i · J_i`, and strictly the top `k = 2` specialists are gated into Working Memory.
 
-3. **Offline Dream-RSI Consolidation**:
-   When cortical specialists exhibit epistemic divergence or a target criterion underperforms, Dream-RSI samples the highest-surprise DMN bridge outside Working Memory, formulates a counterfactual consolidation insight, verifies quantitative helper functions in an isolated Python sandbox, and gates updates strictly when candidate solutions improve or preserve benchmark performance.
+* **Central Executive Network (`core/cortical_synthesizer.py`)**:
+  Receives only the `k = 2` Salience-gated specialist analyses and the top DMN structural bridge, synthesizing an integrated, falsifiable mechanism and quantitative parameter set.
+
+---
+
+Developer Guide: How to Use Ael-Agents
+--------------------------------------
+
+### 1. Installation
+
+```bash
+git clone https://github.com/prannesshkva/Ael-Agents.git
+cd Ael-Agents
+pip install -r requirements.txt
+pip install rdkit scipy
+```
+
+### 2. Run the Verified Deterministic Benchmark Suite (Zero API Keys Required)
+
+To verify the RDKit cheminformatics compiler, SciPy 2-compartment PK/PD ODE integration, MedMCQA pharmacology ground-truth evaluation, and SimLex-999 / STS-Benchmark RSA alignment locally without any LLM API calls:
+
+```bash
+python benchmarks/run_all_benchmarks.py
+```
+
+### 3. Use Ael-Agents for Drug Discovery & Systems Pharmacology (Intended Purpose)
+
+Set one or more Groq API keys in your environment (`GROQ_API_KEY_1`, `GROQ_API_KEY_2`, ...) for parallel thread-pooled execution:
+
+```bash
+export GROQ_API_KEY_1="your_groq_key"
+```
+
+#### A. Command-Line Scientific Inquiry (Wake + Parameter Training + Dream-RSI + Monte Carlo `mct`)
+
+```bash
+python ask_scientist.py \
+  --question "Design a precision allosteric covalent-reversible inhibitor and closed-loop PK/PD dosing regimen targeting mutant KRAS-G12D that prevents MAPK/PI3K feedback reactivation and maintains hepatic/cardiac ADMET safety margins." \
+  --roster default \
+  --epochs 15 \
+  --dream-rsi \
+  --dream-generations 1 \
+  --test-mct \
+  --test-human-rsa \
+  --output-json evaluation_results.json
+```
+
+#### B. Python SDK Usage (Integrating into Your Own Agentic Pipeline)
+
+```python
+from core.api_queue import APIKeyQueue
+from core.config import FrameworkConfig
+from core.domain_registry import default_roster
+from core.embeddings import get_encoder
+from core.framework import JacobianRSACortexFramework
+from core.dream_rsi import DreamRSILoop
+from analysis.monte_carlo import mct
+from benchmarks.kras_g12d_discovery_benchmark import (
+    evaluate_rdkit_smiles,
+    simulate_two_compartment_pkpd,
+)
+
+# 1. Initialize the 768-dim BGE encoder, FIFO key queue, and 4-expert therapeutic roster
+encoder = get_encoder()
+key_queue = APIKeyQueue()
+roster = default_roster()
+
+framework = JacobianRSACortexFramework(
+    config=FrameworkConfig(latent_dim=encoder.info.dim),
+    roster=roster,
+    encoder=encoder,
+    key_queue=key_queue,
+)
+
+# 2. Execute the Wake forward pass (4 parallel experts -> DMN RDM -> SN k=2 -> CEN)
+question = (
+    "Design a covalent-reversible switch-II pocket inhibitor for KRAS-G12D "
+    "with twice-daily oral 2-compartment PK/PD parameters."
+)
+state = framework.run(question)
+
+# 3. Train the 4 scalar cortical parameters (w_1 .. w_4) via PyTorch autograd
+framework.optimize_11_parameters(epochs=15)
+framework.refresh_salience()
+state = framework.last_state
+
+print("Salience-Gated Working Memory (k=2):", state["working_memory_domains"])
+print("Trained Cortical Gating Weights:", state["gating_weights"])
+
+# 4. Run 4,999-sample Monte Carlo permutation & Dirichlet stability test
+mc_report = mct(framework, state)
+print("RDM Dispersion p-value:", mc_report["rdm_structure_mc_test"]["mc_p_value"])
+
+# 5. Run Offline Dream-RSI (counterfactual consolidation + sandboxed tool synthesis)
+rsi_report = DreamRSILoop(framework).run(question, generations=1, initial_state=state)
+
+# 6. Validate candidate chemistry & PK/PD dynamics deterministically (RDKit + SciPy)
+chem_audit = evaluate_rdkit_smiles("Cc1ncnc2c1ncn2C(C)C(=O)NCc1ccc(C(F)C(F)F)cc1")
+pk_audit = simulate_two_compartment_pkpd(
+    {"dose_mg": 150.0, "cl_l_h": 8.5, "vc_l": 35.0, "ka_h_inv": 1.5, "q_l_h": 12.0, "vp_l": 45.0, "kd_nm": 0.02, "ic50_nm": 0.02},
+    dosing_interval_h=12.0,
+)
+print("RDKit QED:", chem_audit["qed_druglikeness"], "| 24h Pathway Suppression:", pk_audit["final_pathway_biomarker_suppression_pct"])
+```
+
+### 4. Plugging in Custom Specialist Rosters (For Any Quantitative Domain)
+
+While **Ael-Agents** ships with the 4-piece therapeutic discovery roster as its default, the cortical engine (`JacobianRSACortexFramework`) dynamically binds **1 trainable scalar weight `w_i` per specialist** for any roster size `N`:
+
+* **Custom YAML Roster**: Create a YAML file (see [`rosters/social_sciences.yaml`](rosters/social_sciences.yaml)) and run:
+  ```bash
+  python ask_scientist.py --roster path/to/your_domains.yaml --question "Your research problem"
+  ```
+* **Automated Domain Segregation (`--roster auto`)**: Let the planner decompose an arbitrary research problem into `N` non-overlapping specialist sub-agents automatically:
+  ```bash
+  python ask_scientist.py --roster auto --num-auto-domains 4 --question "Your research problem"
+  ```
 
 ---
 
 Verified Empirical Benchmarks
 -----------------------------
 
-All benchmark scripts and cached ground-truth datasets are self-contained inside [`benchmarks/`](benchmarks/) and can be reproduced deterministically without API keys via:
-
-```bash
-python benchmarks/run_all_benchmarks.py
-```
+All benchmark scripts and cached ground-truth datasets are located in [`benchmarks/`](benchmarks/) and [`benchmarks/results/verified_benchmark_results.json`](benchmarks/results/verified_benchmark_results.json).
 
 ### Benchmark 1: KRAS-G12D Allosteric Inhibitor Discovery (RDKit + SciPy 2-Compartment ODE)
 
-Evaluates candidate designs for mutant **KRAS-G12D** (Pancreatic & Colorectal Ductal Adenocarcinoma) using **deterministic RDKit (2026.9.1) cheminformatics compilation** and **SciPy (solve_ivp, RK45) 2-compartment pharmacokinetic/pharmacodynamic ODE integration** over 24 hours (150 mg BID oral dosing), with zero LLM self-judging.
+Evaluates candidate designs for mutant **KRAS-G12D** (Pancreatic & Colorectal Ductal Adenocarcinoma) using **deterministic RDKit (2026.9.1) cheminformatics compilation** and **SciPy (`solve_ivp`, RK45) 2-compartment pharmacokinetic/pharmacodynamic ODE integration** over 24 hours (150 mg BID oral dosing), with zero LLM self-judging.
 
 #### A. Deterministic Cheminformatics Validation (RDKit)
 
@@ -181,41 +355,18 @@ Ael-Agents/
 
 ---
 
-Quickstart
-----------
+Engineering Scope & Honest Limitations
+--------------------------------------
 
-### 1. Install Dependencies
-
-```bash
-pip install -r requirements.txt
-pip install rdkit scipy
-```
-
-### 2. Run the Deterministic Verification Benchmark Suite (No API Keys Required)
-
-```bash
-python benchmarks/run_all_benchmarks.py
-```
-
-### 3. Run Live Cortical Inquiry + Dream-RSI (With Groq API Keys)
-
-Set one or more Groq API keys in your environment (`export GROQ_API_KEY_1="your_key"`) and run:
-
-```bash
-python ask_scientist.py --question "Design a precision allosteric covalent-reversible inhibitor and closed-loop PK/PD dosing regimen targeting mutant KRAS-G12D" --dream-rsi --test-mct --test-human-rsa
-```
+* **Differentiable Routing vs. Base Model Pretraining**: **Ael-Agents** trains the cortical coordination weights `w_1 ... w_N` and evolves specialist focus prompts/tools at test time; it does not modify the internal weights of the underlying LLM. Its value is enabling compact open-weight models (`openai/gpt-oss-20b`, `qwen/qwen3.8-27b`) to coordinate across orthogonal scientific constraints without context bloat.
+* **Systems Coordination vs. 3D Structure Generation**: While **Ael-Agents** validates topological chemical properties via **RDKit** and integrates multi-compartment PK/PD ODEs via **SciPy**, it is a mechanistic and systems-pharmacology reasoning framework—not a replacement for 3D physics-based free-energy perturbation (FEP+) or equivariant diffusion structure generators.
+* **When Dream-RSI Should Gate Off**: Iterative self-correction can degrade performance if allowed to override strong specialist consensus. **Ael-Agents** enforces a `3/4` supermajority consensus lock so offline Dream-RSI only intervenes when the Wake panel exhibits genuine epistemic divergence.
 
 ---
 
-Scope & Scientific Limitations
-------------------------------
+Citation & License
+------------------
 
-* **Systems Coordination vs. 3D Structure Generation**: **Ael-Agents** is an agentic systems-pharmacology and biophysical reasoning coordinator. While it interfaces with **RDKit** for topological druglikeness/valence verification and **SciPy** for multi-compartment PK/PD ODE integration, it does not replace 3D physics-based molecular dynamics (e.g., OpenMM/FEP+) or equivariant diffusion docking models.
-* **Token-Constrained Working Memory**: The k = 2 Salience Network bottleneck is specifically engineered so compact open-weight models (`openai/gpt-oss-20b`, `qwen/qwen3.8-27b`) achieve high mechanistic accuracy at ~2,200 tokens per inquiry.
-
----
-
-Citation
---------
-
-If you use **Ael-Agents** in your research, please cite it using the metadata in [`CITATION.cff`](CITATION.cff).
+* **DOI**: [10.17605/OSF.IO/7R46Z](https://doi.org/10.17605/OSF.IO/7R46Z)
+* **License**: [Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)](LICENSE)
+* If you build on or reference **Ael-Agents** in your research, please cite [`CITATION.cff`](CITATION.cff).
