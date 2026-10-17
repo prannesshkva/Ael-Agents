@@ -1,0 +1,119 @@
+[
+  {
+    "id": "a3da135a-a6a2-4e1c-8823-8ab0913f5668",
+    "question": "A patient presented to emergency with overdose some drug. There were increased salivation and increased bronchial secretions. On examination, blood pressure was 88/60 mmHg. RBC esterase level is 50. What should be the treatment of this person?",
+    "options": {
+      "A": "Neostigmine",
+      "B": "Atropine",
+      "C": "Flumazenil",
+      "D": "Physostigmine"
+    },
+    "answer": "B",
+    "topic": "AIIMS 2019",
+    "explanation": "Low esterase levels indicate acetylcholinesterase inhibition. Atropine blocks muscarinic overstimulation."
+  },
+  {
+    "id": "a570d3c3-865a-41b6-8e21-dccbf7feec4c",
+    "question": "A patient from north-eastern states was diagnosed to have infection with P. falciparum malaria. What is the most appropriate drug for this patient?",
+    "options": {
+      "A": "Artemether plus lumefantrine",
+      "B": "Sulfadoxine plus pyrimethamine",
+      "C": "Chloroquine",
+      "D": "Mefloquine"
+    },
+    "answer": "A",
+    "topic": "Pharmacology",
+    "explanation": "Artemether-lumefantrine fixed-dose combination is first-line ACT in North-Eastern states."
+  },
+  {
+    "id": "e7f023ea-2147-47d3-9f2a-61fb60a900be",
+    "question": "Which of these drugs is an antidote for fibrinolytic therapy?",
+    "options": {
+      "A": "Epsilon aminocaproic acid",
+      "B": "Protamine",
+      "C": "Heparin",
+      "D": "Streptokinase"
+    },
+    "answer": "A",
+    "topic": "Pharmacology",
+    "explanation": "Epsilon-aminocaproic acid is a synthetic lysine analog that inhibits plasminogen activation."
+  },
+  {
+    "id": "e881fcb0-a4f2-45ed-97cf-c53045f98e30",
+    "question": "Absorption of which of the following drugs is increased after a fatty meal?",
+    "options": {
+      "A": "Amphotericin B",
+      "B": "Griseofulvin",
+      "C": "Ampicillin",
+      "D": "Aspirin"
+    },
+    "answer": "B",
+    "topic": "Pharmacology",
+    "explanation": "Griseofulvin is highly lipophilic and its oral absorption increases after a fatty meal."
+  },
+  {
+    "id": "da27e783-4c0b-4621-bc3d-938a109d8425",
+    "question": "Use of lithium during pregnancy increases the risk of development of which of the following malformations in the baby?",
+    "options": {
+      "A": "Facial defects",
+      "B": "Cardiac defects",
+      "C": "Neural tube defects",
+      "D": "Urogenital defects"
+    },
+    "answer": "B",
+    "topic": "AIIMS 2018",
+    "explanation": "Lithium during pregnancy increases the risk of Ebstein's anomaly (tricuspid valve cardiac defect)."
+  },
+  {
+    "id": "58ffad4a-5613-4d26-88b2-a4bb2ce2b9e6",
+    "question": "Which of the following drugs can be stopped abruptly without any withdrawal symptoms?",
+    "options": {
+      "A": "Escitalopram",
+      "B": "Fluoxetine",
+      "C": "Fluvoxamine",
+      "D": "Sertraline"
+    },
+    "answer": "B",
+    "topic": "Pharmacology",
+    "explanation": "Fluoxetine and its active metabolite norfluoxetine have long elimination half-lives that self-taper."
+  },
+  {
+    "id": "8b3e9e1d-8571-49ef-a5ef-806c18ad079e",
+    "question": "IV ultrashort acting barbiturate:",
+    "options": {
+      "A": "Meprobamate",
+      "B": "Pentobarbitone",
+      "C": "Thiopentone",
+      "D": "Phenobarbitone"
+    },
+    "answer": "C",
+    "topic": "Pharmacology",
+    "explanation": "Thiopentone is an intravenous ultrashort-acting barbiturate terminated by rapid redistribution."
+  },
+  {
+    "id": "6bce210a-7174-4c76-b1f0-9bc3f5c835fc",
+    "question": "CYP50 inhibition is least by:",
+    "options": {
+      "A": "Pantoprazole",
+      "B": "Rabeprazole",
+      "C": "Lansoprazole",
+      "D": "Omeprazole"
+    },
+    "answer": "B",
+    "topic": "Pharmacology",
+    "explanation": "Rabeprazole undergoes predominantly non-enzymatic reduction to a thioether and exhibits the least CYP450 inhibition."
+  },
+  {
+    "id": "e7278113-c555-4128-a8df-cbd10ca7833f",
+    "question": "A patient is administered 200 mg of a drug. 75 mg of the drug is eliminated from the body in 90 minutes. If the drug follows first order kinetics, how much drug will remain after 6 hours?",
+    "options": {
+      "A": "12.5 mg",
+      "B": "25 mg",
+      "C": "30 mg",
+      "D": "50 mg"
+    },
+    "answer": "C",
+    "topic": "Pharmacology",
+    "explanation": "First-order fraction retained per 90 min = 125/200 = 0.625. After 6 hours (4 intervals): 200 * (0.625)^4 = 30.52 mg ~ 30 mg."
+  }
+]

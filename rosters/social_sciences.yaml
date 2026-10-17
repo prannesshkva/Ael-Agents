@@ -1,0 +1,13 @@
+name: social_sciences
+description: Panel for questions about societies, behaviour, institutions and policy.
+domains:
+  - {name: Economics, title: Economics, focus: "microeconomic incentives, general equilibrium, causal identification and welfare analysis"}
+  - {name: Psychology, title: Psychology, focus: "cognitive and social psychology, behavioural experiments, bias and decision theory"}
+  - {name: Sociology, title: Sociology, focus: "social structure, networks, institutions and collective behaviour"}
+  - {name: PoliticalScience, title: Political Science, focus: "institutional design, collective action, game theory of politics"}
+  - {name: Anthropology, title: Anthropology, focus: "cross-cultural variation, ethnography and cultural evolution"}
+  - {name: Linguistics, title: Linguistics, focus: "language structure, pragmatics, acquisition and language change"}
+  - {name: Statistics, title: Statistics and Causal Inference, focus: "study design, identification, effect-size estimation and uncertainty"}
+  - {name: Demography, title: Demography and Public Health, focus: "population dynamics, epidemiology and health outcomes"}
+  - {name: Philosophy, title: Philosophy of Science and Ethics, focus: "epistemology, measurement validity, normative frameworks"}
+  - {name: DataScience, title: Computational Social Science, focus: "large-scale data, machine learning for behaviour, agent-based modelling"}

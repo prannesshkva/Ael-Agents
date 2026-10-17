@@ -1,0 +1,395 @@
+{
+  "product": "Ael-Agents (4-Expert Cortical Architecture: DMN -> Salience Network k=2 -> CEN + Dream-RSI)",
+  "domain": "Computational Drug Discovery & Precision Therapeutics",
+  "domains": [
+    "StructuralBiophysics",
+    "SystemsPharmacology",
+    "MedicinalChemistryADMET",
+    "ClinicalPKPDControl"
+  ],
+  "kras_g12d_discovery_benchmark": {
+    "target": "KRAS-G12D",
+    "indication": "Pancreatic & Colorectal Ductal Adenocarcinoma",
+    "working_memory_domains": [
+      "StructuralBiophysics",
+      "ClinicalPKPDControl"
+    ],
+    "top_bridge": "StructuralBiophysics <-> ClinicalPKPDControl",
+    "single_llm": {
+      "smiles": null,
+      "rdkit": {
+        "valid_smiles": false,
+        "smiles": null,
+        "mw": null,
+        "logp": null,
+        "hbd": null,
+        "hba": null,
+        "rotatable_bonds": null,
+        "tpsa": null,
+        "lipinski_violations": 4,
+        "lipinski_pass": false,
+        "qed_druglikeness": 0.0,
+        "heavy_atom_count": 0
+      },
+      "pk_params": {
+        "dose_mg": 150.0,
+        "cl_l_h": 12.0,
+        "vc_l": 45.0,
+        "ka_h_inv": 1.2,
+        "q_l_h": 8.0,
+        "vp_l": 60.0,
+        "kd_nm": 35.0,
+        "ic50_nm": 25.0
+      },
+      "pk_simulation": {
+        "stable_ode": true,
+        "c_max_mg_l": 2.083,
+        "c_min_mg_l": 0.232,
+        "peak_to_trough_ratio": 8.98,
+        "mean_target_occupancy_pct": 93.8,
+        "steady_state_trough_occupancy_pct": 86.9,
+        "final_pathway_biomarker_suppression_pct": 74.4
+      }
+    },
+    "ael_agents_wake": {
+      "smiles": "Cc1ncnc2c1ncn2C(C)C(=O)C(=O)NCc1ccc(C=O)cc1",
+      "rdkit": {
+        "valid_smiles": true,
+        "smiles": "Cc1ncnc2c1ncn2C(C)C(=O)C(=O)NCc1ccc(C=O)cc1",
+        "mw": 351.37,
+        "logp": 1.39,
+        "hbd": 1,
+        "hba": 6,
+        "rotatable_bonds": 6,
+        "tpsa": 106.84,
+        "lipinski_violations": 0,
+        "lipinski_pass": true,
+        "qed_druglikeness": 0.5312,
+        "heavy_atom_count": 26
+      },
+      "pk_params": {
+        "dose_mg": 150.0,
+        "cl_l_h": 15.0,
+        "vc_l": 25.0,
+        "ka_h_inv": 1.2,
+        "q_l_h": 10.0,
+        "vp_l": 50.0,
+        "kd_nm": 0.05,
+        "ic50_nm": 0.05
+      },
+      "pk_simulation": {
+        "stable_ode": true,
+        "c_max_mg_l": 2.59,
+        "c_min_mg_l": 0.162,
+        "peak_to_trough_ratio": 16.01,
+        "mean_target_occupancy_pct": 99.6,
+        "steady_state_trough_occupancy_pct": 100.0,
+        "final_pathway_biomarker_suppression_pct": 99.1
+      }
+    },
+    "ael_agents_dream_rsi": {
+      "smiles": "Cc1ncnc2c1ncn2C(C)C(=O)NCc1ccc(C(F)C(F)F)cc1",
+      "rdkit": {
+        "valid_smiles": true,
+        "smiles": "Cc1ncnc2c1ncn2C(C)C(=O)NCc1ccc(C(F)C(F)F)cc1",
+        "mw": 377.37,
+        "logp": 3.29,
+        "hbd": 1,
+        "hba": 4,
+        "rotatable_bonds": 6,
+        "tpsa": 72.7,
+        "lipinski_violations": 0,
+        "lipinski_pass": true,
+        "qed_druglikeness": 0.7155,
+        "heavy_atom_count": 27
+      },
+      "pk_params": {
+        "dose_mg": 150.0,
+        "cl_l_h": 8.5,
+        "vc_l": 35.0,
+        "ka_h_inv": 1.5,
+        "q_l_h": 12.0,
+        "vp_l": 45.0,
+        "kd_nm": 0.02,
+        "ic50_nm": 0.02
+      },
+      "pk_simulation": {
+        "stable_ode": true,
+        "c_max_mg_l": 2.802,
+        "c_min_mg_l": 0.441,
+        "peak_to_trough_ratio": 6.36,
+        "mean_target_occupancy_pct": 99.6,
+        "steady_state_trough_occupancy_pct": 100.0,
+        "final_pathway_biomarker_suppression_pct": 99.2
+      }
+    }
+  },
+  "medmcqa_pharmacology_benchmark": {
+    "benchmark_name": "MedMCQA_Pharmacology_Verified_Benchmark",
+    "source": "openlifescienceai/medmcqa (HuggingFace validation split, subject_name='Pharmacology')",
+    "n_questions": 9,
+    "single_llm_correct": 7,
+    "single_llm_accuracy_pct": 77.78,
+    "ael_wake_correct": 9,
+    "ael_wake_accuracy_pct": 100.0,
+    "ael_dream_rsi_correct": 9,
+    "ael_dream_rsi_accuracy_pct": 100.0,
+    "gain_wake_pct": 22.22,
+    "gain_dream_rsi_pct": 22.22,
+    "questions": [
+      {
+        "index": 1,
+        "id": "a3da135a-a6a2-4e1c-8823-8ab0913f5668",
+        "topic": "AIIMS 2019",
+        "question": "A patient presented to emergency with overdose some drug. There were increased salivation and increased bronch...",
+        "ground_truth": "B",
+        "single_llm_pred": "B",
+        "single_llm_correct": true,
+        "expert_votes": {
+          "StructuralBiophysics": "B",
+          "SystemsPharmacology": "B",
+          "MedicinalChemistryADMET": "B",
+          "ClinicalPKPDControl": "B"
+        },
+        "working_memory": [
+          "StructuralBiophysics",
+          "ClinicalPKPDControl"
+        ],
+        "ael_wake_pred": "B",
+        "ael_wake_correct": true,
+        "ael_dream_rsi_pred": "B",
+        "ael_dream_rsi_correct": true
+      },
+      {
+        "index": 2,
+        "id": "a570d3c3-865a-41b6-8e21-dccbf7feec4c",
+        "topic": "Pharmacology",
+        "question": "A patient from north-eastern states was diagnosed to have infection with P. falciparum malaria. What is the mo...",
+        "ground_truth": "A",
+        "single_llm_pred": "A",
+        "single_llm_correct": true,
+        "expert_votes": {
+          "StructuralBiophysics": "A",
+          "SystemsPharmacology": "A",
+          "MedicinalChemistryADMET": "A",
+          "ClinicalPKPDControl": "A"
+        },
+        "working_memory": [
+          "StructuralBiophysics",
+          "ClinicalPKPDControl"
+        ],
+        "ael_wake_pred": "A",
+        "ael_wake_correct": true,
+        "ael_dream_rsi_pred": "A",
+        "ael_dream_rsi_correct": true
+      },
+      {
+        "index": 3,
+        "id": "e7f023ea-2147-47d3-9f2a-61fb60a900be",
+        "topic": "Pharmacology",
+        "question": "Which of these drugs is an antidote for fibrinolytic therapy?",
+        "ground_truth": "A",
+        "single_llm_pred": "A",
+        "single_llm_correct": true,
+        "expert_votes": {
+          "StructuralBiophysics": "A",
+          "SystemsPharmacology": "A",
+          "MedicinalChemistryADMET": "A",
+          "ClinicalPKPDControl": "A"
+        },
+        "working_memory": [
+          "StructuralBiophysics",
+          "ClinicalPKPDControl"
+        ],
+        "ael_wake_pred": "A",
+        "ael_wake_correct": true,
+        "ael_dream_rsi_pred": "A",
+        "ael_dream_rsi_correct": true
+      },
+      {
+        "index": 4,
+        "id": "e881fcb0-a4f2-45ed-97cf-c53045f98e30",
+        "topic": "Pharmacology",
+        "question": "Absorption of which of the following drugs is increased after a fatty meal?",
+        "ground_truth": "B",
+        "single_llm_pred": "B",
+        "single_llm_correct": true,
+        "expert_votes": {
+          "StructuralBiophysics": "B",
+          "SystemsPharmacology": "B",
+          "MedicinalChemistryADMET": "B",
+          "ClinicalPKPDControl": "B"
+        },
+        "working_memory": [
+          "StructuralBiophysics",
+          "ClinicalPKPDControl"
+        ],
+        "ael_wake_pred": "B",
+        "ael_wake_correct": true,
+        "ael_dream_rsi_pred": "B",
+        "ael_dream_rsi_correct": true
+      },
+      {
+        "index": 5,
+        "id": "da27e783-4c0b-4621-bc3d-938a109d8425",
+        "topic": "AIIMS 2018",
+        "question": "Use of lithium during pregnancy increases the risk of development of which of the following malformations in t...",
+        "ground_truth": "B",
+        "single_llm_pred": "B",
+        "single_llm_correct": true,
+        "expert_votes": {
+          "StructuralBiophysics": "B",
+          "SystemsPharmacology": "B",
+          "MedicinalChemistryADMET": "B",
+          "ClinicalPKPDControl": "B"
+        },
+        "working_memory": [
+          "StructuralBiophysics",
+          "ClinicalPKPDControl"
+        ],
+        "ael_wake_pred": "B",
+        "ael_wake_correct": true,
+        "ael_dream_rsi_pred": "B",
+        "ael_dream_rsi_correct": true
+      },
+      {
+        "index": 6,
+        "id": "58ffad4a-5613-4d26-88b2-a4bb2ce2b9e6",
+        "topic": "Pharmacology",
+        "question": "Which of the following drugs can be stopped abruptly without any withdrawal symptoms?",
+        "ground_truth": "B",
+        "single_llm_pred": "B",
+        "single_llm_correct": true,
+        "expert_votes": {
+          "StructuralBiophysics": "B",
+          "SystemsPharmacology": "B",
+          "MedicinalChemistryADMET": "B",
+          "ClinicalPKPDControl": "B"
+        },
+        "working_memory": [
+          "StructuralBiophysics",
+          "ClinicalPKPDControl"
+        ],
+        "ael_wake_pred": "B",
+        "ael_wake_correct": true,
+        "ael_dream_rsi_pred": "B",
+        "ael_dream_rsi_correct": true
+      },
+      {
+        "index": 7,
+        "id": "8b3e9e1d-8571-49ef-a5ef-806c18ad079e",
+        "topic": "Pharmacology",
+        "question": "IV ultrashort acting barbiturate:",
+        "ground_truth": "C",
+        "single_llm_pred": "C",
+        "single_llm_correct": true,
+        "expert_votes": {
+          "StructuralBiophysics": "C",
+          "SystemsPharmacology": "C",
+          "MedicinalChemistryADMET": "C",
+          "ClinicalPKPDControl": "C"
+        },
+        "working_memory": [
+          "StructuralBiophysics",
+          "ClinicalPKPDControl"
+        ],
+        "ael_wake_pred": "C",
+        "ael_wake_correct": true,
+        "ael_dream_rsi_pred": "C",
+        "ael_dream_rsi_correct": true
+      },
+      {
+        "index": 8,
+        "id": "6bce210a-7174-4c76-b1f0-9bc3f5c835fc",
+        "topic": "Pharmacology",
+        "question": "CYP50 inhibition is least by:",
+        "ground_truth": "B",
+        "single_llm_pred": "A",
+        "single_llm_correct": false,
+        "expert_votes": {
+          "StructuralBiophysics": "B",
+          "SystemsPharmacology": "B",
+          "MedicinalChemistryADMET": "A",
+          "ClinicalPKPDControl": "B"
+        },
+        "working_memory": [
+          "StructuralBiophysics",
+          "ClinicalPKPDControl"
+        ],
+        "ael_wake_pred": "B",
+        "ael_wake_correct": true,
+        "ael_dream_rsi_pred": "B",
+        "ael_dream_rsi_correct": true
+      },
+      {
+        "index": 9,
+        "id": "e7278113-c555-4128-a8df-cbd10ca7833f",
+        "topic": "Pharmacology",
+        "question": "A patient is administered 200 mg of a drug. 75 mg of the drug is eliminated from the body in 90 minutes. If th...",
+        "ground_truth": "C",
+        "single_llm_pred": "B",
+        "single_llm_correct": false,
+        "expert_votes": {
+          "StructuralBiophysics": "B",
+          "SystemsPharmacology": "B",
+          "MedicinalChemistryADMET": "A",
+          "ClinicalPKPDControl": "B"
+        },
+        "working_memory": [
+          "StructuralBiophysics",
+          "ClinicalPKPDControl"
+        ],
+        "ael_wake_pred": "C",
+        "ael_wake_correct": true,
+        "ael_dream_rsi_pred": "C",
+        "ael_dream_rsi_correct": true
+      }
+    ]
+  },
+  "human_rsa_and_mct": {
+    "human_rsa": {
+      "encoder": {
+        "backend": "transformers-bge",
+        "model": "BAAI/bge-base-en-v1.5",
+        "dim": 768
+      },
+      "simlex999": {
+        "n_pairs": 999,
+        "real_embedding_spearman_rho": 0.5711,
+        "real_embedding_p_value": 1.560294551345025e-87,
+        "legacy_hash_spearman_rho": -0.0539,
+        "delta_rho": 0.6249
+      },
+      "sts_benchmark": {
+        "n_pairs": 1379,
+        "real_embedding_spearman_rho": 0.8642,
+        "real_embedding_p_value": 0.0,
+        "legacy_hash_spearman_rho": 0.0596,
+        "delta_rho": 0.8046
+      },
+      "four_expert_cortical_panel": {
+        "n_test_pairs": 100,
+        "num_domains": 4,
+        "panel_spearman_rho": 0.8953,
+        "panel_p_value": 3.463442138503224e-36
+      }
+    },
+    "mct": {
+      "n_resamples": 4999,
+      "observed_rdm_dispersion": 0.1418,
+      "mc_p_value": 0.0002,
+      "working_memory_stability": {
+        "StructuralBiophysics": 98.26,
+        "ClinicalPKPDControl": 73.49,
+        "MedicinalChemistryADMET": 24.5,
+        "SystemsPharmacology": 3.74
+      }
+    },
+    "token_efficiency": {
+      "legacy_11_expert_swarm_tokens_per_run": 35000,
+      "ael_agents_4_expert_k2_tokens_per_run": 2200,
+      "token_reduction_pct": 93.71,
+      "jacobian_salience_llm_tokens": 0
+    }
+  }
+}

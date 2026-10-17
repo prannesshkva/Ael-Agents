@@ -1,0 +1,17 @@
+cff-version: 1.2.0
+message: "If you use Ael-Agents in your research, please cite it using the metadata below."
+title: "Ael-Agents: Trainable Jacobian-RSA Cortical Architecture for Precision Therapeutics"
+version: 1.0.0
+date-released: 2026-10-18
+license: MIT
+repository-code: "https://github.com/prannesshkva/Ael-Agents"
+authors:
+  - family-names: "KVA"
+    given-names: "Prannessh"
+keywords:
+  - multi-agent-systems
+  - computational-drug-discovery
+  - systems-pharmacology
+  - representational-similarity-analysis
+  - jacobian-salience-network
+  - pharmacokinetics
