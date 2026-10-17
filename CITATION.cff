@@ -2,9 +2,11 @@ cff-version: 1.2.0
 message: "If you use Ael-Agents in your research, please cite it using the metadata below."
 title: "Ael-Agents: Trainable Jacobian-RSA Cortical Architecture for Precision Therapeutics"
 version: 1.0.0
+doi: "10.17605/OSF.IO/7R46Z"
 date-released: 2026-10-18
-license: MIT
+license: "CC-BY-NC-ND-4.0"
 repository-code: "https://github.com/prannesshkva/Ael-Agents"
+url: "https://doi.org/10.17605/OSF.IO/7R46Z"
 authors:
   - family-names: "KVA"
     given-names: "Prannessh"

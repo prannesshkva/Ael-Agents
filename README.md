@@ -1,7 +1,8 @@
 Ael-Agents: Trainable Jacobian-RSA Cortical Architecture for Precision Therapeutics
 ===================================================================================
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![DOI](https://img.shields.io/badge/DOI-10.17605%2FOSF.IO%2F7R46Z-blue.svg)](https://doi.org/10.17605/OSF.IO/7R46Z)
+[![License: CC BY-NC-ND 4.0](https://img.shields.io/badge/License-CC_BY--NC--ND_4.0-lightgrey.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-3776AB.svg)](https://www.python.org/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-Autograd_Jacobian-EE4C2C.svg)](https://pytorch.org/)
 [![RDKit](https://img.shields.io/badge/Cheminformatics-RDKit_Validated-2E8B57.svg)](https://www.rdkit.org/)
