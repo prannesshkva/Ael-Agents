@@ -1,3 +1,12 @@
+import os
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
+try:
+    import sentence_transformers
+except Exception:
+    pass
+
 import threading
 import warnings
 from typing import Any, Dict, List, Optional
@@ -42,7 +51,6 @@ class SemanticEncoder:
         loaded = False
         try:
             from sentence_transformers import SentenceTransformer
-
             try:
                 self._model = SentenceTransformer(model_name, device=device, local_files_only=True)
             except Exception:

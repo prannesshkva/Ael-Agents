@@ -1,6 +1,15 @@
+import os
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
+try:
+    import sentence_transformers
+except Exception:
+    pass
+
+from .embeddings import SemanticEncoder, get_encoder
 from .config import FrameworkConfig, AgentConfig, CorticalSynthesizerConfig, RSALensConfig, JacobianLensConfig
 from .api_queue import APIKeyQueue, ChatOpenAI
-from .embeddings import SemanticEncoder, get_encoder
 from .domain_registry import (
     DomainSpec,
     default_roster,

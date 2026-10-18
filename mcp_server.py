@@ -2,6 +2,11 @@ import os
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
+try:
+    import sentence_transformers
+except Exception:
+    pass
+
 import argparse
 import json
 import sys
