@@ -2,7 +2,23 @@ import time
 from typing import Any, Callable, Dict, List, Optional
 
 import torch
-from deepagents import create_deep_agent
+
+try:
+    from deepagents import create_deep_agent
+except ImportError:
+    class _DirectDeepAgentFallback:
+        def __init__(self, model: Any, system_prompt: str):
+            self.model = model
+            self.system_prompt = system_prompt
+
+        def invoke(self, state: Dict[str, Any]) -> Dict[str, Any]:
+            user_msgs = state.get("messages", [])
+            full_msgs = [{"role": "system", "content": self.system_prompt}] + list(user_msgs)
+            resp = self.model.invoke(full_msgs)
+            return {"messages": list(user_msgs) + [resp]}
+
+    def create_deep_agent(model: Any, tools: Any = None, system_prompt: str = "", name: str = "") -> Any:
+        return _DirectDeepAgentFallback(model=model, system_prompt=system_prompt)
 
 from core.api_queue import APIKeyQueue
 from core.embeddings import SemanticEncoder, get_encoder

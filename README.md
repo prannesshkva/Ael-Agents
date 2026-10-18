@@ -233,6 +233,40 @@ While **Ael-Agents** ships with the 4-piece therapeutic discovery roster as its 
   python ask_scientist.py --roster auto --num-auto-domains 4 --question "Your research problem"
   ```
 
+### 5. Claude Desktop, Claude Code & Cursor Integration (Model Context Protocol — MCP)
+
+**Ael-Agents** ships with a zero-dependency JSON-RPC 2.0 `stdio` **Model Context Protocol (MCP) Server** ([`mcp_server.py`](mcp_server.py)). This allows **Claude Desktop**, **Claude Code**, **Cursor**, or **Windsurf** to use Ael-Agents as a local **PyTorch Cortical Co-Processor** on *any* engineering, scientific, or architectural problem—even with **zero external LLM API keys**.
+
+#### A. Quick Verification (Self-Test)
+```bash
+python mcp_server.py --self-test
+```
+
+#### B. Add to Claude Desktop (`claude_desktop_config.json`) or Cursor (`.cursor/mcp.json`)
+```json
+{
+  "mcpServers": {
+    "ael-agents-cortex": {
+      "command": "python",
+      "args": ["/absolute/path/to/Ael-Agents/mcp_server.py"]
+    }
+  }
+}
+```
+Or register directly in **Claude Code**:
+```bash
+claude mcp add ael-agents-cortex -- python /absolute/path/to/Ael-Agents/mcp_server.py
+```
+
+#### C. Exposed MCP Tools
+| MCP Tool Name | Zero API Keys? | What It Executes |
+| :--- | :---: | :--- |
+| **`ael_propose_specialist_roster`** | **YES** | Segregates any user problem into `N = 4` mutually orthogonal specialist domains (`drug_discovery`, `software_systems`, `general_first_principles`, or custom YAML). |
+| **`ael_cortical_rdm_and_jacobian_gate`** | **YES** | Takes specialist hypotheses, embeds them into the 768-D BGE manifold, computes the `N × N` **RDM** (`D_ij = 1 - S_ij`), runs **0-token PyTorch autograd Jacobian sensitivity** (`J_i = \|\|∂y/∂w_i\|\|_2`), and gates the top `k = 2` working-memory specialists + **Epistemic Surprise Bridge**. |
+| **`ael_dream_rsi_consolidate`** | **YES** | Executes offline **Dream-RSI** sleep consolidation: runs `UnifiedCortexLoss` Adam gradient steps on `w_1 .. w_N` and verifies free-energy reduction (`F_dream <= F_wake`). |
+| **`ael_verify_molecule_pkpd`** | **YES** | Deterministic **RDKit** chemical compiler (valence, MW, LogP, TPSA, Lipinski, QED) + **SciPy RK45** 2-compartment PK/PD ODE solver. |
+| **`ael_run_autonomous_pipeline`** | Requires `GROQ_API_KEY` | Runs the complete end-to-end parallel LangGraph pipeline + LangSmith trace telemetry. |
+
 ---
 
 Verified Empirical Benchmarks
