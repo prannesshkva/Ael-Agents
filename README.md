@@ -1,13 +1,19 @@
-Ael-Agents: Trainable Jacobian-RSA Multi-Agent Framework
-========================================================
+<p align="center">
+  <img src="assets/logo_banner.png" alt="Ael-Agents Logo" width="420"/>
+</p>
 
-[![DOI](https://img.shields.io/badge/DOI-10.17605%2FOSF.IO%2F7R46Z-blue.svg)](https://doi.org/10.17605/OSF.IO/7R46Z)
-[![License: CC BY-NC-ND 4.0](https://img.shields.io/badge/License-CC_BY--NC--ND_4.0-lightgrey.svg)](LICENSE)
-[![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-3776AB.svg)](https://www.python.org/)
-[![PyTorch](https://img.shields.io/badge/PyTorch-Differentiable_Routing-EE4C2C.svg)](https://pytorch.org/)
-[![RDKit](https://img.shields.io/badge/Cheminformatics-RDKit_Validated-2E8B57.svg)](https://www.rdkit.org/)
-[![SciPy ODE](https://img.shields.io/badge/Pharmacokinetics-SciPy_ODE-8CAAE6.svg)](https://scipy.org/)
-[![LangSmith](https://img.shields.io/badge/LangSmith-Public_Trace-1C3C3C.svg)](https://smith.langchain.com/public/71010a71-b6cf-4e07-b6db-2d3553ad4a3a/r)
+<h1 align="center">Ael-Agents: Trainable Jacobian-RSA Multi-Agent Framework</h1>
+
+<p align="center">
+  <a href="https://doi.org/10.17605/OSF.IO/7R46Z"><img src="https://img.shields.io/badge/DOI-10.17605%2FOSF.IO%2F7R46Z-blue.svg" alt="DOI"/></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-CC_BY--NC--ND_4.0-lightgrey.svg" alt="License"/></a>
+  <a href="https://www.python.org/"><img src="https://img.shields.io/badge/Python-3.10%2B-3776AB.svg" alt="Python 3.10+"/></a>
+  <a href="https://pytorch.org/"><img src="https://img.shields.io/badge/PyTorch-Differentiable_Routing-EE4C2C.svg" alt="PyTorch"/></a>
+  <a href="mcp_server.py"><img src="https://img.shields.io/badge/MCP-Claude_%26_Cursor_Ready-D97757.svg" alt="MCP Ready"/></a>
+  <a href="https://www.rdkit.org/"><img src="https://img.shields.io/badge/Cheminformatics-RDKit_Validated-2E8B57.svg" alt="RDKit"/></a>
+  <a href="https://scipy.org/"><img src="https://img.shields.io/badge/Pharmacokinetics-SciPy_ODE-8CAAE6.svg" alt="SciPy ODE"/></a>
+  <a href="https://smith.langchain.com/public/71010a71-b6cf-4e07-b6db-2d3553ad4a3a/r"><img src="https://img.shields.io/badge/LangSmith-Public_Trace-1C3C3C.svg" alt="LangSmith"/></a>
+</p>
 
 **Ael-Agents** is a **trainable, token-bounded multi-agent reasoning framework** built for Agentic AI engineers, ML researchers, and scientific R&D teams who need mathematical control over how specialist agents coordinate, route context, and self-improve.
 
