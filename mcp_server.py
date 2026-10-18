@@ -56,6 +56,7 @@ class CorticalMCPState:
             jacobian_loss_weight=0.10,
         )
         self.registries: Dict[str, DomainParameterRegistry] = {}
+        self.last_hypotheses: Dict[str, str] = {}
 
     def get_encoder_instance(self):
         with self._enc_lock:
@@ -274,6 +275,7 @@ def tool_propose_specialist_roster(args: Dict[str, Any]) -> Dict[str, Any]:
 def tool_cortical_rdm_and_jacobian_gate(args: Dict[str, Any]) -> Dict[str, Any]:
     problem = str(args.get("problem", "")).strip()
     hypotheses_map = _normalize_hypotheses(args.get("hypotheses", {}), fallback_args=args)
+    GLOBAL_MCP_STATE.last_hypotheses = dict(hypotheses_map)
 
     working_memory_k = max(1, int(args.get("working_memory_k", 2)))
     domain_names = [str(k) for k in hypotheses_map.keys()]
@@ -376,7 +378,8 @@ def tool_cortical_rdm_and_jacobian_gate(args: Dict[str, Any]) -> Dict[str, Any]:
 
 def tool_dream_rsi_consolidate(args: Dict[str, Any]) -> Dict[str, Any]:
     problem = str(args.get("problem", "")).strip()
-    hypotheses_map = _normalize_hypotheses(args.get("hypotheses", {}), fallback_args=args)
+    raw_hyps = args.get("hypotheses") or GLOBAL_MCP_STATE.last_hypotheses or {}
+    hypotheses_map = _normalize_hypotheses(raw_hyps, fallback_args=args)
     wake_solution = str(args.get("wake_solution", "")).strip()
     epochs = max(1, min(50, int(args.get("epochs", 15))))
 
