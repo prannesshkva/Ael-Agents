@@ -130,18 +130,23 @@ Instead of spawning generic personas ("Researcher", "Critic", "Planner") whose o
 ### 2. Differentiable Triple-Network Routing (`DMN → SN → CEN`)
 
 * **Default Mode Network ([`core/rsa_engine.py`](core/rsa_engine.py))**:
-  Encodes each specialist's hypothesis $h_i$ into L2-normalized $e_i \in \mathbb{R}^{768}$. Computes the cosine similarity matrix $S_{ij} = e_i^\top e_j$, Representational Dissimilarity Matrix $D_{ij} = 1 - S_{ij}$, Participation Ratio $\text{PR} = (\sum_i \lambda_i)^2 / \sum_i \lambda_i^2$, and ranks cross-domain pairs by structural resonance weighted by epistemic surprise against prior domain distances:
-  $$I_{\text{DMN}}(i, j) = \frac{1 + S_{ij}}{2} \cdot \left|S_{ij} - S_{ij}^{\text{prior}}\right|$$
+  Encodes each specialist's hypothesis `h_i` into L2-normalized `e_i ∈ ℝ^768`. Computes the cosine similarity matrix `S_ij = e_i^T · e_j`, Representational Dissimilarity Matrix `D_ij = 1 - S_ij`, Participation Ratio `PR = (∑ λ_i)^2 / ∑ (λ_i^2)`, and ranks cross-domain pairs by structural resonance weighted by epistemic surprise against prior domain distances:
+
+  `I_DMN(i, j) = ((1 + S_ij) / 2) · |S_ij - S_ij_prior|`
 
 * **Salience Network & Autograd Jacobian Lens ([`core/jacobian_lens.py`](core/jacobian_lens.py))**:
-  Computes softmax gating weights $\alpha_i = \text{softmax}(w_i / \tau)$ and evaluates the differentiable cortical objective $\mathcal{L}_{\text{cortex}}(w)$ ([`training/loss_functions.py`](training/loss_functions.py)):
-  $$\mathcal{L}_{\text{cortex}}(w) = \mathcal{L}_{\text{align}}(w) + \lambda_{\text{div}} \mathcal{L}_{\text{div}}(w) + \lambda_{\text{ent}} \mathcal{L}_{\text{ent}}(w)$$
+  Computes softmax gating weights `α_i = softmax(w_i / τ)` and evaluates the differentiable cortical objective `L_cortex(w)` ([`training/loss_functions.py`](training/loss_functions.py)):
+
+  `L_cortex(w) = L_align(w) + λ_div · L_div(w) + λ_ent · L_ent(w)`
+
   Using `torch.autograd.grad`, it extracts the exact Jacobian sensitivity of the global cortical state to each specialist:
-  $$J_i = \left\|\frac{\partial y(w)}{\partial w_i}\right\|_2 \quad \text{and} \quad \left|\frac{\partial \mathcal{L}_{\text{cortex}}}{\partial w_i}\right|$$
-  Specialists are ranked by combined salience $\alpha_i \cdot J_i$, and strictly the top $k = 2$ specialists are gated into Working Memory.
+
+  `J_i = ||∂y(w) / ∂w_i||_2`  and  `|∂L_cortex / ∂w_i|`
+
+  Specialists are ranked by combined salience `α_i · J_i`, and strictly the top `k = 2` specialists are gated into Working Memory.
 
 * **Central Executive Network ([`core/cortical_synthesizer.py`](core/cortical_synthesizer.py))**:
-  Receives strictly the $k = 2$ Salience-gated specialist analyses and the top DMN structural bridge, synthesizing an integrated, falsifiable mechanism and quantitative parameter set without context pollution from low-salience agents.
+  Receives strictly the `k = 2` Salience-gated specialist analyses and the top DMN structural bridge, synthesizing an integrated, falsifiable mechanism and quantitative parameter set without context pollution from low-salience agents.
 
 ---
 
@@ -330,7 +335,7 @@ In **Cline** (`cline_mcp_settings.json`), add the same `"Ael-Agents"` block unde
 | :--- | :---: | :--- |
 | **`Ael-Agents_propose_specialist_roster`** | **NO** | Partitions any user problem into `N = 4` orthogonal specialist domains (`preset="auto"`, `"drug_discovery"`, `"software_systems"`, `"general_first_principles"`, or custom YAML path). |
 | **`Ael-Agents_cortical_rdm_and_jacobian_gate`** | **NO** | Embeds the 4 specialist hypotheses into the 768-D `BAAI/bge-base-en-v1.5` manifold, computes the `4 × 4` **RDM** (`D_ij = 1 - S_ij`) & Participation Ratio, runs **0-token PyTorch autograd Jacobian sensitivity** (`J_i = \|\|∂y/∂w_i\|\|_2`), and gates strictly the top `k = 2` working-memory domains + **Epistemic Surprise Bridge**. |
-| **`Ael-Agents_dream_rsi_consolidate`** | **NO** | Runs offline **Dream-RSI** sleep consolidation: executes `epochs` (default `15`) of Adam gradient descent on `UnifiedCortexLoss(w)` and verifies free-energy reduction ($\mathcal{F}_{\text{dream}} \le \mathcal{F}_{\text{wake}}$). |
+| **`Ael-Agents_dream_rsi_consolidate`** | **NO** | Runs offline **Dream-RSI** sleep consolidation: executes `epochs` (default `15`) of Adam gradient descent on `UnifiedCortexLoss(w)` and verifies free-energy reduction (`F_dream <= F_wake`). |
 | **`Ael-Agents_verify_molecule_pkpd`** | **NO** | Deterministic **RDKit** molecular compiler (SMILES validity, MW, LogP, TPSA, HBD/HBA, Lipinski, QED) + **SciPy (`solve_ivp`, RK45)** 2-compartment oral PK/PD ODE solver. |
 | **`Ael-Agents_run_autonomous_pipeline`** | **YES (`GROQ_API_KEY`)** | Runs the standalone multi-threaded `JacobianRSACortexFramework` + `DreamRSILoop` + `mct` pipeline using your configured API key pool. |
 
@@ -354,10 +359,10 @@ Feature-by-Feature Execution Guide
 
 **Dream-RSI** ([`core/dream_rsi.py`](core/dream_rsi.py) & [`dream_rsi.py`](dream_rsi.py)) is Ael-Agents' offline recursive self-improvement engine. Unlike naive "self-critique" prompts that often degrade accuracy through overthinking, Dream-RSI combines **four mathematical safeguards**:
 
-1. **`3/4` Supermajority Consensus Lock**: In discrete classification/board tasks, if $\ge 3$ of $4$ orthogonal Wake specialists independently converge on the same answer, Dream-RSI locks the consensus and prevents self-corruption.
+1. **`3/4` Supermajority Consensus Lock**: In discrete classification/board tasks, if `>= 3 of 4` orthogonal Wake specialists independently converge on the same answer, Dream-RSI locks the consensus and prevents self-corruption.
 2. **Counterfactual Unexplored-Bridge Replay**: Selects the highest-surprise DMN bridge *outside* the initial Working Memory (`_select_dream_bridge`) and formulates a sharp counterfactual sub-question coupling those two domains.
 3. **Sandboxed Pure-Python Tool Synthesis (`ToolRegistry`)**: `synthesize_and_verify_tool()` generates a pure-Python quantitative helper function (`def compute_...`), executes it inside a restricted `safe_globals` sandbox (`math` only, zero I/O or imports), verifies non-empty output, and binds the verified tool directly onto the participating specialist agents.
-4. **Cortical Weight & Roster Evolution + Acceptance Gate**: Evolves the weakest specialist's focus prompt (`combined_rank = 0.65 * salience + 0.35 * dirichlet_stability`), runs 15 Adam epochs on `w_1 .. w_N`, and **commits the generation only if** free energy drops ($\mathcal{F}_{\text{dream}} \le \mathcal{F}_{\text{wake}}$) or paired multi-criteria evaluation improves; otherwise it **rolls back** to the pre-dream weights and roster.
+4. **Cortical Weight & Roster Evolution + Acceptance Gate**: Evolves the weakest specialist's focus prompt (`combined_rank = 0.65 * salience + 0.35 * dirichlet_stability`), runs 15 Adam epochs on `w_1 .. w_N`, and **commits the generation only if** free energy drops (`F_dream <= F_wake`) or paired multi-criteria evaluation improves; otherwise it **rolls back** to the pre-dream weights and roster.
 
 #### A. Run Dream-RSI from the Command Line (`dream_rsi.py`)
 ```bash
@@ -413,7 +418,7 @@ print("Synthesized Sandbox Tools:", ToolRegistry.list_tools())
 
 ### 2. How to Train the Differentiable Cortical Weights (`w_1 ... w_N`)
 
-Each specialist $i \in \{1 \dots N\}$ is bound 1-to-1 to a scalar parameter $w_i \in [0.05, 3.00]$ in `DomainParameterRegistry` ([`core/parameter_registry.py`](core/parameter_registry.py)). You can optimize `w_1 .. w_N` via AdamW gradient descent on `UnifiedCortexLoss` ([`training/loss_functions.py`](training/loss_functions.py)):
+Each specialist `i ∈ {1 ... N}` is bound 1-to-1 to a scalar parameter `w_i ∈ [0.05, 3.00]` in `DomainParameterRegistry` ([`core/parameter_registry.py`](core/parameter_registry.py)). You can optimize `w_1 .. w_N` via AdamW gradient descent on `UnifiedCortexLoss` ([`training/loss_functions.py`](training/loss_functions.py)):
 
 ```python
 # Train w_1 .. w_N for 25 epochs after a Wake pass and inspect the parameter table
@@ -428,7 +433,7 @@ for row in framework.param_registry.get_parameter_table():
 
 ### 3. How to Run 4,999-Sample Monte Carlo Permutation & Dirichlet Stability (`mct`)
 
-To prove that the $N \times N$ Representational Dissimilarity Matrix (RDM) and the top-$k=2$ Salience Working-Memory selection are statistically significant and robust to noise, run `mct()` ([`analysis/monte_carlo.py`](analysis/monte_carlo.py)):
+To prove that the `N × N` Representational Dissimilarity Matrix (RDM) and the top `k = 2` Salience Working-Memory selection are statistically significant and robust to noise, run `mct()` ([`analysis/monte_carlo.py`](analysis/monte_carlo.py)):
 
 ```python
 from analysis.monte_carlo import mct
@@ -527,10 +532,10 @@ python benchmarks/run_all_benchmarks.py
 
 | # | Benchmark Suite | Script & Report | Ground-Truth Verifier | Key Empirical Result |
 | :---: | :--- | :--- | :--- | :--- |
-| **1** | **KRAS-G12D Allosteric Inhibitor Discovery** | [`benchmarks/kras_g12d_discovery_benchmark.py`](benchmarks/kras_g12d_discovery_benchmark.py) | **RDKit** (`2026.9.1`) + **SciPy** (`solve_ivp` RK45 2-compartment ODE) | QED improves from **`0.000`** (Single-LLM invalid SMILES) $\to$ **`0.531`** (Wake) $\to$ **`0.716`** (Dream-RSI); 24h pathway suppression reaches **`99.1%`** (`6.36` peak/trough). |
+| **1** | **KRAS-G12D Allosteric Inhibitor Discovery** | [`benchmarks/kras_g12d_discovery_benchmark.py`](benchmarks/kras_g12d_discovery_benchmark.py) | **RDKit** (`2026.9.1`) + **SciPy** (`solve_ivp` RK45 2-compartment ODE) | QED improves from **`0.000`** (Single-LLM invalid SMILES) → **`0.531`** (Wake) → **`0.716`** (Dream-RSI); 24h pathway suppression reaches **`99.1%`** (`6.36` peak/trough). |
 | **2** | **MedMCQA Pharmacology Board Benchmark** | [`benchmarks/medmcqa_pharmacology_benchmark.py`](benchmarks/medmcqa_pharmacology_benchmark.py) | Official human medical-board key (`openlifescienceai/medmcqa`) | **`100.0%` (`9/9`)** with Ael-Agents + `3/4` supermajority lock vs. **`77.78%` (`7/9`)** Single-LLM baseline (**`+22.22%`**). |
-| **3** | **Human Concept/Sentence RSA & Monte Carlo `mct`** | [`benchmarks/human_rsa_and_mct_benchmark.py`](benchmarks/human_rsa_and_mct_benchmark.py) | **SimLex-999** ($N=999$), **STS-B** ($N=1,379$), & **4,999** Dirichlet/Permutation resamples | STS-B Spearman **$\rho = +0.8642$** ($p < 10^{-300}$); 4-Expert Panel **$\rho = +0.8953$**; RDM permutation **$p = 0.0002$**. |
-| **4** | **Controlled A/B Systems Benchmark (Claude Standalone vs. Claude + `Ael-Agents` MCP)** | [`benchmarks/claude_mcp_ab_benchmark.py`](benchmarks/claude_mcp_ab_benchmark.py) & [Full Report](benchmarks/CLAUDE_MCP_SYSTEMS_BENCHMARK_REPORT.md) | C11 Ring-Buffer State Machine, Crypto Cycle Budget, & M/D/1 + Lyapunov Drift Invariants | Standalone Claude fails on 5 invariants (deadlocks at `seq=65537`, `>428 µs` BLS latency, $W_q \to \infty$ under flood). Claude + `Ael-Agents` achieves **$-31.8\%$ Free Energy** and **$W_{p999} = 8.80\ \mu\text{s} < 10\ \mu\text{s}$**. |
+| **3** | **Human Concept/Sentence RSA & Monte Carlo `mct`** | [`benchmarks/human_rsa_and_mct_benchmark.py`](benchmarks/human_rsa_and_mct_benchmark.py) | **SimLex-999** (`N = 999`), **STS-B** (`N = 1,379`), & **4,999** Dirichlet/Permutation resamples | STS-B Spearman **`ρ = +0.8642`** (`p < 10⁻³⁰⁰`); 4-Expert Panel **`ρ = +0.8953`**; RDM permutation **`p = 0.0002`**. |
+| **4** | **Controlled A/B Systems Benchmark (Claude Standalone vs. Claude + `Ael-Agents` MCP)** | [`benchmarks/claude_mcp_ab_benchmark.py`](benchmarks/claude_mcp_ab_benchmark.py) & [Full Report](benchmarks/CLAUDE_MCP_SYSTEMS_BENCHMARK_REPORT.md) | C11 Ring-Buffer State Machine, Crypto Cycle Budget, & M/D/1 + Lyapunov Drift Invariants | Standalone Claude fails on 5 invariants (deadlocks at `seq=65537`, `>428 µs` BLS latency, `W_q -> ∞` under flood). Claude + `Ael-Agents` achieves **`-31.8%` Free Energy** and **`W_p999 = 8.80 µs < 10 µs`**. |
 
 ---
 
@@ -579,7 +584,8 @@ python benchmarks/run_all_benchmarks.py
   * *Prompt*: *"A patient is administered 200 mg of a drug. 75 mg is eliminated in 90 minutes. If the drug follows first-order kinetics, how much drug will remain after 6 hours?"*
   * *Single-LLM Baseline*: Selected **`B` (25 mg)** — used a linear subtraction heuristic.
   * *Ael-Agents CEN (`C: 30 mg`)*: Derived the exact first-order exponential retention across four 90-minute intervals:
-    $$A(360\text{ min}) = 200 \times \left(\frac{125}{200}\right)^4 = 200 \times (0.625)^4 = 30.52\text{ mg} \approx 30\text{ mg (Option C)}$$
+
+    `A(360 min) = 200 × (125 / 200)⁴ = 200 × (0.625)⁴ = 30.52 mg ≈ 30 mg (Option C)`
 
 ---
 
@@ -602,15 +608,15 @@ python benchmarks/run_all_benchmarks.py
 * **Full Technical Report**: [`benchmarks/CLAUDE_MCP_SYSTEMS_BENCHMARK_REPORT.md`](benchmarks/CLAUDE_MCP_SYSTEMS_BENCHMARK_REPORT.md)
 * **Experimental Design**: Evaluates **Claude Sonnet 4.6** on an adversarial hardware/distributed-systems prompt (*"Design a distributed lock-free ring-buffer consensus engine that guarantees sub-10-microsecond p999 tail latency under Byzantine faults"*) under two controlled conditions:
   * **Condition A**: Claude Sonnet 4.6 Standalone (without `Ael-Agents`).
-  * **Condition B**: Claude Sonnet 4.6 connected to the **`Ael-Agents` MCP Server** (`Ael-Agents_propose_specialist_roster` $\rightarrow$ `Ael-Agents_cortical_rdm_and_jacobian_gate` $\rightarrow$ `Ael-Agents_dream_rsi_consolidate`).
+  * **Condition B**: Claude Sonnet 4.6 connected to the **`Ael-Agents` MCP Server** (`Ael-Agents_propose_specialist_roster` → `Ael-Agents_cortical_rdm_and_jacobian_gate` → `Ael-Agents_dream_rsi_consolidate`).
 
 | Audit Dimension | Condition A: Claude Standalone (No `Ael-Agents`) | Condition B: Claude + `Ael-Agents` MCP | Outcome |
 | :--- | :--- | :--- | :---: |
-| **Cortical Manifold & Salience Gate** | Unweighted 4-topic prompt blend (0 sensitivity filtering) | **768-D BGE RDM** ($\text{PR} = 3.739$, $\bar{D} = 0.8539$); **0-token PyTorch Jacobian** gates `QueueingControlTheory` ($J = 0.5201$) $\leftrightarrow$ `SystemsMemoryKernel` ($J = 0.4995$) | **0 Routing Tokens** |
-| **Dream-RSI Consolidation (15 Adam Epochs)** | None | $\mathcal{F}_{\text{wake}} = 0.44487 \to \mathcal{F}_{\text{dream}} = 0.30361$ (**$\Delta\mathcal{F} = -0.14125 / -31.8\%$**); boosts `QueueingControl` to **$\alpha = 63.17\%$** and prunes `Consensus` to **$\alpha = 3.02\%$** | **Strictly Improved** |
-| **Hot-Path Cryptography ($<10\ \mu\text{s}$ Budget)** | **FAIL ($>428\ \mu\text{s}$ real latency):** Uses BLS12-381 pairings + 64-slot batching (`128 µs` wait + `300 µs` pairing); hallucinates `0.78 ns/slot` | **PASS (`~100 ns`):** Uses pre-computed symmetric 32-byte HMAC/MAC at the $O(1)$ ingress admission gate | **Ael-Agents Wins** |
-| **Byzantine Flood Resilience ($\lambda \ge \mu$)** | **FAIL ($W_q \to \infty$):** Zero ingress admission control; assumes static polite arrivals ($\rho = 0.25$) | **PASS ($\rho \le 0.70$):** Token-Bucket + Lyapunov drift controller ($V(q)=q^2, \dot{V} < 0$) drops flood traffic in $O(1)$ | **Ael-Agents Wins** |
-| **Lock-Free Ring Buffer State Machine** | **FAIL (Deadlocks on Wrap):** Sets recycled sequence at slot 0 to `tail + capacity + 1` (`65537` instead of `65536`), causing an infinite spin loop on first wrap-around | **PASS ($W_{p999} = 8.80\ \mu\text{s} < 10\ \mu\text{s}$):** Power-of-2 bitmask indexing `(idx & (N-1))` + 64-byte cache-aligned seqlock snapshots | **Ael-Agents Wins** |
+| **Cortical Manifold & Salience Gate** | Unweighted 4-topic prompt blend (0 sensitivity filtering) | **768-D BGE RDM** (`PR = 3.739`, `D_mean = 0.8539`); **0-token PyTorch Jacobian** gates `QueueingControlTheory` (`J = 0.5201`) ↔ `SystemsMemoryKernel` (`J = 0.4995`) | **0 Routing Tokens** |
+| **Dream-RSI Consolidation (15 Adam Epochs)** | None | `F_wake = 0.44487 -> F_dream = 0.30361` (**`ΔF = -0.14125 / -31.8%`**); boosts `QueueingControl` to **`α = 63.17%`** and prunes `Consensus` to **`α = 3.02%`** | **Strictly Improved** |
+| **Hot-Path Cryptography (`< 10 µs` Budget)** | **FAIL (`> 428 µs` real latency):** Uses BLS12-381 pairings + 64-slot batching (`128 µs` wait + `300 µs` pairing); hallucinates `0.78 ns/slot` | **PASS (`~100 ns`):** Uses pre-computed symmetric 32-byte HMAC/MAC at the `O(1)` ingress admission gate | **Ael-Agents Wins** |
+| **Byzantine Flood Resilience (`λ >= µ`)** | **FAIL (`W_q -> ∞`):** Zero ingress admission control; assumes static polite arrivals (`ρ = 0.25`) | **PASS (`ρ <= 0.70`):** Token-Bucket + Lyapunov drift controller (`V(q) = q², dV/dt < 0`) drops flood traffic in `O(1)` | **Ael-Agents Wins** |
+| **Lock-Free Ring Buffer State Machine** | **FAIL (Deadlocks on Wrap):** Sets recycled sequence at slot 0 to `tail + capacity + 1` (`65537` instead of `65536`), causing an infinite spin loop on first wrap-around | **PASS (`W_p999 = 8.80 µs < 10 µs`):** Power-of-2 bitmask indexing `(idx & (N-1))` + 64-byte cache-aligned seqlock snapshots | **Ael-Agents Wins** |
 
 ---
 
@@ -684,7 +690,7 @@ Engineering Scope & Honest Limitations
 
 * **Differentiable Routing vs. Base Model Pretraining**: **Ael-Agents** trains the cortical coordination weights `w_1 ... w_N` and evolves specialist focus prompts/tools at test time; it does not modify the internal weights of the underlying LLM. Its value is enabling compact open-weight models (`openai/gpt-oss-20b`, `qwen/qwen3.8-27b`) and frontier MCP hosts (Claude Sonnet/Opus, Cursor) to coordinate across orthogonal scientific and engineering constraints without context bloat.
 * **Systems Coordination vs. 3D Structure Generation**: While **Ael-Agents** validates topological chemical properties via **RDKit** and integrates multi-compartment PK/PD ODEs via **SciPy**, it is a mechanistic and systems-pharmacology reasoning framework—not a replacement for 3D physics-based free-energy perturbation (FEP+) or equivariant diffusion structure generators.
-* **When Dream-RSI Should Gate Off**: Iterative self-correction can degrade performance if allowed to override strong specialist consensus. **Ael-Agents** enforces both a `3/4` supermajority consensus lock and a strict free-energy verification gate ($\mathcal{F}_{\text{dream}} \le \mathcal{F}_{\text{wake}}$) so offline Dream-RSI only commits changes when mathematically warranted.
+* **When Dream-RSI Should Gate Off**: Iterative self-correction can degrade performance if allowed to override strong specialist consensus. **Ael-Agents** enforces both a `3/4` supermajority consensus lock and a strict free-energy verification gate (`F_dream <= F_wake`) so offline Dream-RSI only commits changes when mathematically warranted.
 
 ---
 
