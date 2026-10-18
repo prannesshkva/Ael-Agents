@@ -333,6 +333,20 @@ Evaluated against the official human medical-board answer key from HuggingFace `
 
 ---
 
+### Benchmark 4: Controlled A/B Systems Benchmark — Claude Standalone vs. Claude + `Ael-Agents` MCP
+
+Evaluates **Claude Sonnet 4.6** on a hard distributed systems & hardware engineering challenge (*"Design a distributed lock-free ring-buffer consensus engine that guarantees sub-10-microsecond p999 tail latency under Byzantine faults"*) with and without the **`Ael-Agents` MCP** cortical co-processor (full forensic report in [`benchmarks/CLAUDE_MCP_SYSTEMS_BENCHMARK_REPORT.md`](benchmarks/CLAUDE_MCP_SYSTEMS_BENCHMARK_REPORT.md)):
+
+| Audit Dimension | Condition A: Claude Standalone (No `Ael-Agents`) | Condition B: Claude + `Ael-Agents` MCP | Outcome |
+| :--- | :--- | :--- | :---: |
+| **Cortical Manifold & Salience Gate** | Blends all 4 topics without sensitivity filtering | **768-D BGE RDM** ($\text{PR} = 3.739$, $\bar{D} = 0.8539$); **0-token PyTorch Jacobian** gates `QueueingControlTheory` ($J = 0.5201$) $\leftrightarrow$ `SystemsMemoryKernel` ($J = 0.4995$) | **0 Routing Tokens** |
+| **Dream-RSI Consolidation (15 Adam Epochs)** | None | $\mathcal{F}_{\text{wake}} = 0.44487 \to \mathcal{F}_{\text{dream}} = 0.30361$ (**$\Delta\mathcal{F} = -0.14125 / -31.8\%$**); boosts `QueueingControl` to **$\alpha = 63.17\%$** and prunes `Consensus` to **$\alpha = 3.02\%$** | **Strictly Improved** |
+| **Hot-Path Cryptography ($<10\ \mu\text{s}$ Budget)** | **FAIL ($>420\ \mu\text{s}$ real latency):** Uses BLS12-381 pairings + 64-slot batching (`128 µs` wait); hallucinates `0.78 ns/slot` | **PASS (`~100 ns`):** Uses pre-computed symmetric 32-byte HMAC/MAC at the $O(1)$ ingress admission gate | **Ael-Agents Wins** |
+| **Byzantine Flood Resilience ($\lambda \ge \mu$)** | **FAIL ($W_q \to \infty$):** Zero ingress admission control; assumes static polite arrivals ($\rho = 0.25$) | **PASS ($\rho \le 0.70\text{–}0.85$):** Token-Bucket + Lyapunov drift controller ($V(q)=q^2, \dot{V} < 0$) drops flood traffic in $O(1)$ | **Ael-Agents Wins** |
+| **Lock-Free Ring Buffer State Machine** | **FAIL (Deadlocks on Wrap):** Sets recycled sequence to `tail + capacity + 1` (`65537`), causing an infinite spin loop on wrap-around | **PASS ($W_{p999} \approx 8.8\ \mu\text{s} < 10\ \mu\text{s}$):** Power-of-2 bitmask indexing `(idx & (N-1))` + 64-byte cache-aligned seqlock snapshots | **Ael-Agents Wins** |
+
+---
+
 Repository Structure
 --------------------
 
