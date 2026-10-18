@@ -1,6 +1,9 @@
+import os
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
 import argparse
 import json
-import os
 import sys
 import traceback
 from typing import Any, Dict, List, Optional
@@ -195,19 +198,23 @@ def tool_cortical_rdm_and_jacobian_gate(args: Dict[str, Any]) -> Dict[str, Any]:
     domain_names = list(hypotheses_raw.keys())
     texts = [str(hypotheses_raw[n]) for n in domain_names]
 
+    print("     [2a] Initializing neural encoder (BAAI/bge-base-en-v1.5)...", flush=True)
     encoder = GLOBAL_MCP_STATE.get_encoder_instance()
+    print("     [2b] Embedding 4 specialist hypotheses...", flush=True)
     emb_batch = encoder.encode_batch(texts)
     domain_embeddings = {domain_names[i]: emb_batch[i] for i in range(len(domain_names))}
 
     specs = [DomainSpec(name=n, domain_title=n, focus=texts[i][:120]) for i, n in enumerate(domain_names)]
     prior_dist = domain_prior_distance(specs, encoder)
 
+    print("     [2c] Computing Default Mode Network (DMN) 4x4 RDM...", flush=True)
     sim_matrix, rdm_matrix, dmn_bridges, dmn_metrics = GLOBAL_MCP_STATE.dmn_engine(
         domain_embeddings=domain_embeddings,
         domain_names=domain_names,
         prior_dist=prior_dist,
     )
 
+    print("     [2d] Computing 0-token PyTorch autograd Jacobian sensitivity (J_i)...", flush=True)
     registry = GLOBAL_MCP_STATE.get_registry(domain_names)
     sn_out = GLOBAL_MCP_STATE.salience_network.compute_jacobian_and_salience(
         weights_11=registry.weights,
@@ -218,6 +225,7 @@ def tool_cortical_rdm_and_jacobian_gate(args: Dict[str, Any]) -> Dict[str, Any]:
         create_graph=False,
         working_memory_capacity=min(working_memory_k, len(domain_names)),
     )
+    print("     [2e] Salience Network complete! Working memory gated (k=2).", flush=True)
 
     wm_domains = sn_out["working_memory_domains"]
     top_bridge = sn_out["salient_beautiful_matches"][0] if sn_out["salient_beautiful_matches"] else None
