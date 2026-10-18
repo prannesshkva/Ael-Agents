@@ -246,7 +246,7 @@ python mcp_server.py --self-test
 ```json
 {
   "mcpServers": {
-    "ael-agents-cortex": {
+    "Ael-Agents": {
       "command": "python",
       "args": ["/absolute/path/to/Ael-Agents/mcp_server.py"]
     }
@@ -255,17 +255,17 @@ python mcp_server.py --self-test
 ```
 Or register directly in **Claude Code**:
 ```bash
-claude mcp add ael-agents-cortex -- python /absolute/path/to/Ael-Agents/mcp_server.py
+claude mcp add Ael-Agents -- python /absolute/path/to/Ael-Agents/mcp_server.py
 ```
 
 #### C. Exposed MCP Tools
 | MCP Tool Name | Zero API Keys? | What It Executes |
 | :--- | :---: | :--- |
-| **`ael_propose_specialist_roster`** | **YES** | Segregates any user problem into `N = 4` mutually orthogonal specialist domains (`drug_discovery`, `software_systems`, `general_first_principles`, or custom YAML). |
-| **`ael_cortical_rdm_and_jacobian_gate`** | **YES** | Takes specialist hypotheses, embeds them into the 768-D BGE manifold, computes the `N × N` **RDM** (`D_ij = 1 - S_ij`), runs **0-token PyTorch autograd Jacobian sensitivity** (`J_i = \|\|∂y/∂w_i\|\|_2`), and gates the top `k = 2` working-memory specialists + **Epistemic Surprise Bridge**. |
-| **`ael_dream_rsi_consolidate`** | **YES** | Executes offline **Dream-RSI** sleep consolidation: runs `UnifiedCortexLoss` Adam gradient steps on `w_1 .. w_N` and verifies free-energy reduction (`F_dream <= F_wake`). |
-| **`ael_verify_molecule_pkpd`** | **YES** | Deterministic **RDKit** chemical compiler (valence, MW, LogP, TPSA, Lipinski, QED) + **SciPy RK45** 2-compartment PK/PD ODE solver. |
-| **`ael_run_autonomous_pipeline`** | Requires `GROQ_API_KEY` | Runs the complete end-to-end parallel LangGraph pipeline + LangSmith trace telemetry. |
+| **`Ael-Agents_propose_specialist_roster`** | **YES** | Segregates any user problem into `N = 4` mutually orthogonal specialist domains (`drug_discovery`, `software_systems`, `general_first_principles`, or custom YAML). |
+| **`Ael-Agents_cortical_rdm_and_jacobian_gate`** | **YES** | Takes specialist hypotheses, embeds them into the 768-D BGE manifold, computes the `N × N` **RDM** (`D_ij = 1 - S_ij`), runs **0-token PyTorch autograd Jacobian sensitivity** (`J_i = \|\|∂y/∂w_i\|\|_2`), and gates the top `k = 2` working-memory specialists + **Epistemic Surprise Bridge**. |
+| **`Ael-Agents_dream_rsi_consolidate`** | **YES** | Executes offline **Dream-RSI** sleep consolidation: runs `UnifiedCortexLoss` Adam gradient steps on `w_1 .. w_N` and verifies free-energy reduction (`F_dream <= F_wake`). |
+| **`Ael-Agents_verify_molecule_pkpd`** | **YES** | Deterministic **RDKit** chemical compiler (valence, MW, LogP, TPSA, Lipinski, QED) + **SciPy RK45** 2-compartment PK/PD ODE solver. |
+| **`Ael-Agents_run_autonomous_pipeline`** | Requires `GROQ_API_KEY` | Runs the complete end-to-end parallel LangGraph pipeline + LangSmith trace telemetry. |
 
 ---
 

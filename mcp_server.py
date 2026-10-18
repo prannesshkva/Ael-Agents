@@ -2,6 +2,10 @@ import os
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
+import logging
+logging.getLogger("sentence_transformers").setLevel(logging.ERROR)
+logging.getLogger("transformers").setLevel(logging.ERROR)
+
 try:
     import sentence_transformers
 except Exception:
@@ -10,6 +14,7 @@ except Exception:
 import argparse
 import json
 import sys
+import threading
 import traceback
 from typing import Any, Dict, List, Optional
 
@@ -37,6 +42,7 @@ class CorticalMCPState:
 
     def __init__(self) -> None:
         self.encoder = None
+        self._enc_lock = threading.Lock()
         self.dmn_engine = DefaultModeRSAEngine(diversity_margin=0.25)
         self.salience_network = SalienceJacobianNetwork(
             temperature=0.5,
@@ -52,9 +58,10 @@ class CorticalMCPState:
         self.registries: Dict[str, DomainParameterRegistry] = {}
 
     def get_encoder_instance(self):
-        if self.encoder is None:
-            self.encoder = get_encoder()
-        return self.encoder
+        with self._enc_lock:
+            if self.encoder is None:
+                self.encoder = get_encoder()
+            return self.encoder
 
     def get_registry(self, domain_names: List[str]) -> DomainParameterRegistry:
         key = "|".join(domain_names)
@@ -140,6 +147,76 @@ BUILTIN_DOMAIN_PRESETS: Dict[str, List[Dict[str, str]]] = {
 }
 
 
+def _normalize_hypotheses(raw: Any, fallback_args: Optional[Dict[str, Any]] = None) -> Dict[str, str]:
+    if isinstance(raw, str):
+        raw_str = raw.strip()
+        if raw_str.startswith("{") or raw_str.startswith("["):
+            try:
+                raw = json.loads(raw_str)
+            except Exception:
+                pass
+
+    normalized: Dict[str, str] = {}
+    if isinstance(raw, dict):
+        for k, v in raw.items():
+            key_name = str(k).strip()
+            if not key_name:
+                continue
+            if isinstance(v, dict):
+                text_val = (
+                    v.get("hypothesis")
+                    or v.get("text")
+                    or v.get("content")
+                    or v.get("analysis")
+                    or v.get("focus")
+                    or " ".join(f"{sk}: {sv}" for sk, sv in v.items())
+                )
+                normalized[key_name] = str(text_val).strip()
+            elif isinstance(v, (list, tuple)):
+                normalized[key_name] = " ".join(str(x) for x in v).strip()
+            else:
+                normalized[key_name] = str(v).strip()
+    elif isinstance(raw, list):
+        for idx, item in enumerate(raw):
+            if isinstance(item, dict):
+                name = str(
+                    item.get("name")
+                    or item.get("specialist")
+                    or item.get("domain")
+                    or item.get("param_id")
+                    or f"Specialist_{idx + 1}"
+                ).strip()
+                text_val = (
+                    item.get("hypothesis")
+                    or item.get("text")
+                    or item.get("content")
+                    or item.get("analysis")
+                    or item.get("focus")
+                    or json.dumps(item)
+                )
+                normalized[name] = str(text_val).strip()
+            else:
+                normalized[f"Specialist_{idx + 1}"] = str(item).strip()
+
+    if len(normalized) < 2 and fallback_args:
+        skip_keys = {"problem", "hypotheses", "working_memory_k", "wake_solution", "epochs", "preset", "num_specialists"}
+        for k, v in fallback_args.items():
+            if k not in skip_keys and isinstance(v, (str, dict)):
+                normalized[str(k)] = str(v)
+
+    clean_out: Dict[str, str] = {}
+    for k, v in normalized.items():
+        s = str(v).strip()
+        if s:
+            clean_out[str(k).strip()] = s
+
+    if len(clean_out) < 2:
+        raise ValueError(
+            "'hypotheses' must provide at least 2 specialist hypotheses as a dictionary mapping specialist names to hypothesis strings."
+        )
+    return clean_out
+
+
 def tool_propose_specialist_roster(args: Dict[str, Any]) -> Dict[str, Any]:
     problem = str(args.get("problem", "")).strip()
     preset = str(args.get("preset", "auto")).strip().lower()
@@ -152,7 +229,7 @@ def tool_propose_specialist_roster(args: Dict[str, Any]) -> Dict[str, Any]:
         if any(k in lower_p for k in ["kras", "inhibitor", "smiles", "pk/pd", "drug", "pharmacology", "cyp", "binding", "dose", "therapeutic"]):
             domains = BUILTIN_DOMAIN_PRESETS["drug_discovery"][:num_specialists]
             preset = "drug_discovery"
-        elif any(k in lower_p for k in ["distributed", "latency", "kernel", "cuda", "cache", "database", "api", "microservice", "compiler", "queue"]):
+        elif any(k in lower_p for k in ["distributed", "latency", "kernel", "cuda", "cache", "database", "api", "microservice", "compiler", "queue", "ring-buffer", "byzantine", "consensus"]):
             domains = BUILTIN_DOMAIN_PRESETS["software_systems"][:num_specialists]
             preset = "software_systems"
         else:
@@ -169,6 +246,7 @@ def tool_propose_specialist_roster(args: Dict[str, Any]) -> Dict[str, Any]:
             domains = BUILTIN_DOMAIN_PRESETS["general_first_principles"][:num_specialists]
 
     return {
+        "framework": "Ael-Agents",
         "problem": problem,
         "selected_preset": preset,
         "num_specialists": len(domains),
@@ -186,8 +264,8 @@ def tool_propose_specialist_roster(args: Dict[str, Any]) -> Dict[str, Any]:
             for i, d in enumerate(domains)
         ],
         "next_step": (
-            "Pass a dictionary mapping each specialist 'name' to its generated hypothesis into "
-            "'ael_cortical_rdm_and_jacobian_gate' to compute the 768-D BGE RDM and 0-token PyTorch "
+            "Pass a dictionary mapping each specialist 'name' to its generated plain-string hypothesis into "
+            "'Ael-Agents_cortical_rdm_and_jacobian_gate' to compute the 768-D BGE RDM and 0-token PyTorch "
             "autograd Jacobian working-memory gate."
         ),
     }
@@ -195,31 +273,25 @@ def tool_propose_specialist_roster(args: Dict[str, Any]) -> Dict[str, Any]:
 
 def tool_cortical_rdm_and_jacobian_gate(args: Dict[str, Any]) -> Dict[str, Any]:
     problem = str(args.get("problem", "")).strip()
-    hypotheses_raw = args.get("hypotheses", {})
-    if not isinstance(hypotheses_raw, dict) or len(hypotheses_raw) < 2:
-        raise ValueError("'hypotheses' must be a JSON object mapping at least 2 specialist names to their hypothesis texts.")
+    hypotheses_map = _normalize_hypotheses(args.get("hypotheses", {}), fallback_args=args)
 
     working_memory_k = max(1, int(args.get("working_memory_k", 2)))
-    domain_names = list(hypotheses_raw.keys())
-    texts = [str(hypotheses_raw[n]) for n in domain_names]
+    domain_names = [str(k) for k in hypotheses_map.keys()]
+    texts = [str(hypotheses_map[n]) for n in domain_names]
 
-    print("     [2a] Initializing neural encoder (BAAI/bge-base-en-v1.5)...", flush=True)
     encoder = GLOBAL_MCP_STATE.get_encoder_instance()
-    print("     [2b] Embedding 4 specialist hypotheses...", flush=True)
     emb_batch = encoder.encode_batch(texts)
     domain_embeddings = {domain_names[i]: emb_batch[i] for i in range(len(domain_names))}
 
     specs = [DomainSpec(name=n, domain_title=n, focus=texts[i][:120]) for i, n in enumerate(domain_names)]
     prior_dist = domain_prior_distance(specs, encoder)
 
-    print("     [2c] Computing Default Mode Network (DMN) 4x4 RDM...", flush=True)
     sim_matrix, rdm_matrix, dmn_bridges, dmn_metrics = GLOBAL_MCP_STATE.dmn_engine(
         domain_embeddings=domain_embeddings,
         domain_names=domain_names,
         prior_dist=prior_dist,
     )
 
-    print("     [2d] Computing 0-token PyTorch autograd Jacobian sensitivity (J_i)...", flush=True)
     registry = GLOBAL_MCP_STATE.get_registry(domain_names)
     sn_out = GLOBAL_MCP_STATE.salience_network.compute_jacobian_and_salience(
         weights_11=registry.weights,
@@ -230,7 +302,6 @@ def tool_cortical_rdm_and_jacobian_gate(args: Dict[str, Any]) -> Dict[str, Any]:
         create_graph=False,
         working_memory_capacity=min(working_memory_k, len(domain_names)),
     )
-    print("     [2e] Salience Network complete! Working memory gated (k=2).", flush=True)
 
     wm_domains = sn_out["working_memory_domains"]
     top_bridge = sn_out["salient_beautiful_matches"][0] if sn_out["salient_beautiful_matches"] else None
@@ -249,7 +320,7 @@ def tool_cortical_rdm_and_jacobian_gate(args: Dict[str, Any]) -> Dict[str, Any]:
         jac_val = sn_out["jacobian_sensitivities"].get(d_name, 0.0)
         gated_context_blocks.append(
             f"[WORKING MEMORY SLOT: {d_name} | Gating α={gate_pct:.1f}% | Jacobian ||∂y/∂w_i||_2={jac_val:.4f}]\n"
-            f"{hypotheses_raw[d_name]}"
+            f"{hypotheses_map[d_name]}"
         )
 
     bridge_directive = ""
@@ -262,10 +333,12 @@ def tool_cortical_rdm_and_jacobian_gate(args: Dict[str, Any]) -> Dict[str, Any]:
         )
 
     return {
+        "framework": "Ael-Agents",
         "architecture": "Ael-Agents Triple-Network Cortical Hierarchy (DMN -> Salience -> CEN)",
         "routing_llm_tokens_used": 0,
         "embedding_manifold": {
             "model": encoder.info.model_name,
+            "backend": encoder.info.backend,
             "dimension": encoder.info.dim,
         },
         "layer_1_dmn_rsa": {
@@ -303,17 +376,15 @@ def tool_cortical_rdm_and_jacobian_gate(args: Dict[str, Any]) -> Dict[str, Any]:
 
 def tool_dream_rsi_consolidate(args: Dict[str, Any]) -> Dict[str, Any]:
     problem = str(args.get("problem", "")).strip()
-    hypotheses_raw = args.get("hypotheses", {})
+    hypotheses_map = _normalize_hypotheses(args.get("hypotheses", {}), fallback_args=args)
     wake_solution = str(args.get("wake_solution", "")).strip()
     epochs = max(1, min(50, int(args.get("epochs", 15))))
 
-    if not isinstance(hypotheses_raw, dict) or len(hypotheses_raw) < 2:
-        raise ValueError("'hypotheses' must map at least 2 specialist names to their hypothesis strings.")
     if not wake_solution:
-        raise ValueError("'wake_solution' must be a non-empty string.")
+        wake_solution = " ".join(hypotheses_map.values())
 
-    domain_names = list(hypotheses_raw.keys())
-    texts = [str(hypotheses_raw[n]) for n in domain_names]
+    domain_names = [str(k) for k in hypotheses_map.keys()]
+    texts = [str(hypotheses_map[n]) for n in domain_names]
 
     encoder = GLOBAL_MCP_STATE.get_encoder_instance()
     emb_batch = encoder.encode_batch(texts)
@@ -389,6 +460,7 @@ def tool_dream_rsi_consolidate(args: Dict[str, Any]) -> Dict[str, Any]:
     unexplored_bridge = dmn_bridges[1] if len(dmn_bridges) > 1 else (dmn_bridges[0] if dmn_bridges else None)
 
     return {
+        "framework": "Ael-Agents",
         "phase": "Offline Dream-RSI Consolidation",
         "epochs_executed": epochs,
         "free_energy_wake": round(f_wake, 5),
@@ -435,12 +507,12 @@ def tool_verify_molecule_pkpd(args: Dict[str, Any]) -> Dict[str, Any]:
     )
 
     return {
+        "framework": "Ael-Agents",
         "smiles": smiles,
         "rdkit_validation": rdkit_metrics,
         "pk_parameters_used": pk_params,
         "scipy_rk45_two_compartment_pkpd": pkpd_metrics,
     }
-
 
 
 def tool_run_autonomous_pipeline(args: Dict[str, Any]) -> Dict[str, Any]:
@@ -457,6 +529,7 @@ def tool_run_autonomous_pipeline(args: Dict[str, Any]) -> Dict[str, Any]:
     opt_history = fw.optimize_parameters(epochs=optimize_epochs) if optimize_epochs > 0 else []
 
     return {
+        "framework": "Ael-Agents",
         "task": problem,
         "run_id": fw.last_run_id,
         "working_memory_domains": state.get("working_memory_domains", []),
@@ -472,10 +545,12 @@ def tool_run_autonomous_pipeline(args: Dict[str, Any]) -> Dict[str, Any]:
 
 MCP_TOOLS_SPEC: List[Dict[str, Any]] = [
     {
-        "name": "ael_propose_specialist_roster",
+        "name": "Ael-Agents_propose_specialist_roster",
+        "title": "Ael-Agents: Propose Specialist Roster",
+        "annotations": {"title": "Ael-Agents: Propose Specialist Roster"},
         "description": (
-            "Segregate any scientific, engineering, software, or quantitative problem into N mutually "
-            "orthogonal domain specialists (w_1 ... w_N) for the Ael-Agents cortical hierarchy."
+            "Ael-Agents Step 1: Segregate any scientific, engineering, software, or quantitative problem into N "
+            "mutually orthogonal domain specialists (w_1 ... w_N) for the Ael-Agents cortical hierarchy."
         ),
         "inputSchema": {
             "type": "object",
@@ -499,10 +574,12 @@ MCP_TOOLS_SPEC: List[Dict[str, Any]] = [
         },
     },
     {
-        "name": "ael_cortical_rdm_and_jacobian_gate",
+        "name": "Ael-Agents_cortical_rdm_and_jacobian_gate",
+        "title": "Ael-Agents: Cortical RDM & Jacobian Gate",
+        "annotations": {"title": "Ael-Agents: Cortical RDM & Jacobian Gate"},
         "description": (
-            "Zero-LLM-token PyTorch Cortical Co-Processor. Embeds specialist hypotheses into a 768-D "
-            "neural manifold (BAAI/bge-base-en-v1.5), computes the N×N Representational Dissimilarity "
+            "Ael-Agents Step 2: Zero-LLM-token PyTorch Cortical Co-Processor. Embeds specialist hypotheses into a "
+            "768-D neural manifold (BAAI/bge-base-en-v1.5), computes the N×N Representational Dissimilarity "
             "Matrix (RDM) in the Default Mode Network, runs exact PyTorch autograd Jacobian sensitivity "
             "(J_i = ||∂y/∂w_i||_2) in the Salience Network, and gates the top k=2 working-memory "
             "specialists + Epistemic Surprise Bridge for Central Executive Network (CEN) synthesis."
@@ -516,7 +593,7 @@ MCP_TOOLS_SPEC: List[Dict[str, Any]] = [
                 },
                 "hypotheses": {
                     "type": "object",
-                    "description": "Dictionary mapping each specialist domain name to its hypothesis text.",
+                    "description": "Plain dictionary mapping each specialist domain name (str) to its plain hypothesis string (str).",
                     "additionalProperties": {"type": "string"},
                 },
                 "working_memory_k": {
@@ -529,11 +606,13 @@ MCP_TOOLS_SPEC: List[Dict[str, Any]] = [
         },
     },
     {
-        "name": "ael_dream_rsi_consolidate",
+        "name": "Ael-Agents_dream_rsi_consolidate",
+        "title": "Ael-Agents: Dream-RSI Consolidation",
+        "annotations": {"title": "Ael-Agents: Dream-RSI Consolidation"},
         "description": (
-            "Offline Dream-RSI sleep consolidation step. Updates trainable PyTorch cortical weights (w_i) "
-            "via gradient descent on UnifiedCortexLoss, verifies free-energy reduction (F_dream <= F_wake), "
-            "and isolates unexplored RDM cross-domain bridges."
+            "Ael-Agents Step 3: Offline Dream-RSI sleep consolidation step. Updates trainable PyTorch cortical "
+            "weights (w_i) via gradient descent on UnifiedCortexLoss, verifies free-energy reduction "
+            "(F_dream <= F_wake), and isolates unexplored RDM cross-domain bridges."
         ),
         "inputSchema": {
             "type": "object",
@@ -544,7 +623,7 @@ MCP_TOOLS_SPEC: List[Dict[str, Any]] = [
                 },
                 "hypotheses": {
                     "type": "object",
-                    "description": "Dictionary mapping specialist names to their hypothesis texts.",
+                    "description": "Plain dictionary mapping specialist names (str) to their hypothesis texts (str).",
                     "additionalProperties": {"type": "string"},
                 },
                 "wake_solution": {
@@ -561,10 +640,12 @@ MCP_TOOLS_SPEC: List[Dict[str, Any]] = [
         },
     },
     {
-        "name": "ael_verify_molecule_pkpd",
+        "name": "Ael-Agents_verify_molecule_pkpd",
+        "title": "Ael-Agents: Verify Molecule & PK/PD",
+        "annotations": {"title": "Ael-Agents: Verify Molecule & PK/PD"},
         "description": (
-            "Deterministic RDKit chemical compiler (valence, MW, LogP, TPSA, Lipinski Rule of 5, QED "
-            "druglikeness) coupled with SciPy RK45 2-compartment pharmacokinetic/pharmacodynamic ODE "
+            "Ael-Agents Step 4: Deterministic RDKit chemical compiler (valence, MW, LogP, TPSA, Lipinski Rule of 5, "
+            "QED druglikeness) coupled with SciPy RK45 2-compartment pharmacokinetic/pharmacodynamic ODE "
             "integration (steady-state trough target occupancy, Peak-to-Trough ratio, 24h suppression)."
         ),
         "inputSchema": {
@@ -604,7 +685,9 @@ MCP_TOOLS_SPEC: List[Dict[str, Any]] = [
         },
     },
     {
-        "name": "ael_run_autonomous_pipeline",
+        "name": "Ael-Agents_run_autonomous_pipeline",
+        "title": "Ael-Agents: Run Autonomous Pipeline",
+        "annotations": {"title": "Ael-Agents: Run Autonomous Pipeline"},
         "description": (
             "Execute the complete autonomous Ael-Agents LangGraph pipeline (parallel specialists -> DMN "
             "RDM -> Salience Jacobian switch -> CEN synthesis -> PyTorch weight optimization)."
@@ -634,6 +717,16 @@ MCP_TOOLS_SPEC: List[Dict[str, Any]] = [
 
 
 TOOL_DISPATCH = {
+    "Ael-Agents_propose_specialist_roster": tool_propose_specialist_roster,
+    "Ael-Agents_cortical_rdm_and_jacobian_gate": tool_cortical_rdm_and_jacobian_gate,
+    "Ael-Agents_dream_rsi_consolidate": tool_dream_rsi_consolidate,
+    "Ael-Agents_verify_molecule_pkpd": tool_verify_molecule_pkpd,
+    "Ael-Agents_run_autonomous_pipeline": tool_run_autonomous_pipeline,
+    "ael_agents_propose_specialist_roster": tool_propose_specialist_roster,
+    "ael_agents_cortical_rdm_and_jacobian_gate": tool_cortical_rdm_and_jacobian_gate,
+    "ael_agents_dream_rsi_consolidate": tool_dream_rsi_consolidate,
+    "ael_agents_verify_molecule_pkpd": tool_verify_molecule_pkpd,
+    "ael_agents_run_autonomous_pipeline": tool_run_autonomous_pipeline,
     "ael_propose_specialist_roster": tool_propose_specialist_roster,
     "ael_cortical_rdm_and_jacobian_gate": tool_cortical_rdm_and_jacobian_gate,
     "ael_dream_rsi_consolidate": tool_dream_rsi_consolidate,
@@ -663,7 +756,7 @@ def handle_jsonrpc_message(msg: Dict[str, Any]) -> Optional[Dict[str, Any]]:
                     "prompts": {"listChanged": False},
                 },
                 "serverInfo": {
-                    "name": "ael-agents-cortex-mcp",
+                    "name": "Ael-Agents",
                     "version": "1.1.0",
                 },
             },
@@ -748,6 +841,9 @@ def handle_jsonrpc_message(msg: Dict[str, Any]) -> Optional[Dict[str, Any]]:
 
 
 def run_stdio_mcp_server() -> None:
+    jsonrpc_stdout = sys.stdout
+    sys.stdout = sys.stderr
+    threading.Thread(target=GLOBAL_MCP_STATE.get_encoder_instance, daemon=True).start()
     for raw_line in sys.stdin:
         line = raw_line.strip()
         if not line:
@@ -758,8 +854,8 @@ def run_stdio_mcp_server() -> None:
             continue
         resp = handle_jsonrpc_message(msg)
         if resp is not None:
-            sys.stdout.write(json.dumps(resp) + "\n")
-            sys.stdout.flush()
+            jsonrpc_stdout.write(json.dumps(resp) + "\n")
+            jsonrpc_stdout.flush()
 
 
 def run_self_test() -> None:
@@ -807,7 +903,10 @@ def run_self_test() -> None:
     )
     summary = {
         "mcp_self_test": "PASSED",
+        "framework": "Ael-Agents",
         "selected_preset": roster_out["selected_preset"],
+        "embedding_backend": gate_out["embedding_manifold"]["backend"],
+        "embedding_dim": gate_out["embedding_manifold"]["dimension"],
         "routing_llm_tokens_used": gate_out["routing_llm_tokens_used"],
         "gated_working_memory_specialists": gate_out["layer_3_cen_working_memory"]["gated_working_memory_specialists"],
         "jacobian_sensitivities": gate_out["layer_2_salience_jacobian"]["jacobian_sensitivities_L2"],
