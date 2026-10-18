@@ -750,7 +750,9 @@ def run_stdio_mcp_server() -> None:
 
 
 def run_self_test() -> None:
+    print("[Ael-Agents MCP] Running self-test verification...", flush=True)
     problem = "Design an ultra-low-latency consensus engine with bounded tail latency under Byzantine faults."
+    print("  -> Step 1: Proposing orthogonal specialist roster...", flush=True)
     roster_out = tool_propose_specialist_roster({"problem": problem, "preset": "auto"})
     sample_hypotheses = {
         "DistributedConsensus": (
@@ -770,9 +772,11 @@ def run_self_test() -> None:
             "strictly satisfies λ < μ_quorum, preventing M/G/1 tail queueing explosion during burst traffic."
         ),
     }
+    print("  -> Step 2: Computing 768-D BGE RDM & PyTorch Jacobian Sensitivity Gate...", flush=True)
     gate_out = tool_cortical_rdm_and_jacobian_gate(
         {"problem": problem, "hypotheses": sample_hypotheses, "working_memory_k": 2}
     )
+    print("  -> Step 3: Running Offline Dream-RSI Consolidation...", flush=True)
     dream_out = tool_dream_rsi_consolidate(
         {
             "problem": problem,
@@ -784,6 +788,7 @@ def run_self_test() -> None:
             "epochs": 15,
         }
     )
+    print("  -> Step 4: Deterministic RDKit & SciPy 2-Compartment PK/PD ODE Verification...", flush=True)
     pkpd_out = tool_verify_molecule_pkpd(
         {"smiles": "Cc1ncnc2c1ncn2C(C)C(=O)NCc1ccc(C(F)C(F)F)cc1"}
     )
@@ -799,7 +804,7 @@ def run_self_test() -> None:
         "pkpd_qed": pkpd_out["rdkit_validation"]["qed_druglikeness"],
         "pkpd_trough_occupancy_pct": pkpd_out["scipy_rk45_two_compartment_pkpd"]["steady_state_trough_occupancy_pct"],
     }
-    print(json.dumps(summary, indent=2))
+    print(json.dumps(summary, indent=2), flush=True)
 
 
 def main() -> None:
@@ -813,4 +818,9 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as exc:
+        sys.stderr.write(f"[Ael-Agents MCP Error] {exc}\n")
+        traceback.print_exc(file=sys.stderr)
+        sys.exit(1)
