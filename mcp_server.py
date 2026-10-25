@@ -215,8 +215,10 @@ def _select_dpp_orthogonal_domains(
                 "query_relevance_cos": round(float(rel_scores[idx].item()), 4),
                 "instruction": (
                     f"Generate a dense, mathematically rigorous hypothesis (<180 words) for the user's query "
-                    f"analyzed EXCLUSIVELY through {d['title']} ({d['focus']}). Write explicit governing equations "
-                    f"and physical/quantitative bounds."
+                    f"analyzed EXCLUSIVELY through {d['title']} ({d['focus']}). Even if the user's prompt is brief "
+                    f"or non-technical, elevate it to Principal-Researcher depth: instantiate concrete physical "
+                    f"geometry, boundary conditions, material/system parameters, explicit governing differential/algebraic "
+                    f"equations, dimensionless numbers, and strict failure thresholds."
                 ),
             }
         )
@@ -333,6 +335,11 @@ def tool_propose_specialist_roster(args: Dict[str, Any]) -> Dict[str, Any]:
         "mean_pairwise_orthogonality": dpp_out["mean_pairwise_orthogonality"],
         "candidate_pool_size": dpp_out["candidate_pool_size"],
         "num_specialists": len(dpp_out["selected_domains"]),
+        "researcher_elevation_protocol": (
+            "Elevate even brief or plain-English user prompts to full Principal-Investigator / Chief-Engineer depth: "
+            "infer concrete physical dimensions, realistic operating conditions, material constants, governing differential "
+            "equations, dimensionless numbers, and hard failure bounds from first principles before synthesizing."
+        ),
         "specialists": dpp_out["selected_domains"],
         "next_step": (
             "Pass a dictionary mapping each specialist 'name' to its generated plain-string hypothesis into "
