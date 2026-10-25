@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/logo.png" alt="Ael-Agents Logo" width="420"/>
+  <img src="assets/A.jpg" alt="Ael-Agents Logo" width="240"/>
 </p>
 
 <h1 align="center">Ael-Agents: Trainable Jacobian-RSA Multi-Agent Framework</h1>
