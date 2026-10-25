@@ -12,6 +12,7 @@ except Exception:
     pass
 
 import argparse
+import base64
 import io
 import json
 import math
@@ -1060,6 +1061,37 @@ MCP_TOOLS_SPEC: List[Dict[str, Any]] = [
 ]
 
 
+def _get_mcp_icons() -> List[Dict[str, Any]]:
+    icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "icon_64.jpg")
+    icons: List[Dict[str, Any]] = []
+    if os.path.isfile(icon_path):
+        try:
+            with open(icon_path, "rb") as f:
+                b64 = base64.b64encode(f.read()).decode("ascii")
+            icons.append(
+                {
+                    "src": f"data:image/jpeg;base64,{b64}",
+                    "mimeType": "image/jpeg",
+                    "sizes": ["64x64"],
+                }
+            )
+        except Exception:
+            pass
+    icons.append(
+        {
+            "src": "https://raw.githubusercontent.com/prannesshkva/Ael-Agents/main/assets/A.jpg",
+            "mimeType": "image/jpeg",
+            "sizes": ["512x512"],
+        }
+    )
+    return icons
+
+
+MCP_ICONS_LIST = _get_mcp_icons()
+for _tool_spec in MCP_TOOLS_SPEC:
+    _tool_spec["icons"] = MCP_ICONS_LIST
+
+
 TOOL_DISPATCH = {
     "Ael-Agents_propose_specialist_roster": tool_propose_specialist_roster,
     "Ael-Agents_cortical_rdm_and_jacobian_gate": tool_cortical_rdm_and_jacobian_gate,
@@ -1105,6 +1137,8 @@ def handle_jsonrpc_message(msg: Dict[str, Any]) -> Optional[Dict[str, Any]]:
                 "serverInfo": {
                     "name": "Ael-Agents",
                     "version": "1.2.0",
+                    "icon": MCP_ICONS_LIST[0]["src"] if MCP_ICONS_LIST else "",
+                    "icons": MCP_ICONS_LIST,
                 },
             },
         }
