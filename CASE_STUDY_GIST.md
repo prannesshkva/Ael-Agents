@@ -5,7 +5,7 @@
 > - **[`normal_llm.pdf`](https://github.com/prannesshkva/Ael-Agents/blob/main/benchmarks/evidence/normal_llm.pdf)** — Standard Single-Stream Baseline & Initial Peer Review (Stages 1 & 3)
 > - **[`final_head_to_head_verdict.png`](https://github.com/prannesshkva/Ael-Agents/blob/main/benchmarks/evidence/final_head_to_head_verdict.png)** — Final Head-to-Head Scorecard Confirming `Ael-Agents`' Mathematical & Computational Rigor (Stage 4)
 >
-> **Scope & Disclaimer:** *All molecular structures (`AEL-EGFR-01`), RDKit physicochemical descriptors, and 2-compartment SciPy RK45 ODE simulations in this study are strictly **mathematical and computational (in-silico) reasoning benchmarks**—not wet-lab, preclinical, or clinical claims, and not medical advice.*
+> **Scope & Disclaimer:** *All molecular structures (`AEL-EGFR-01`), RDKit physicochemical descriptors, and 2-compartment SciPy RK45 ODE simulations in this study are strictly **mathematical and computational (in-silico) reasoning benchmarks**—they are **not clinically proven** and **must not be taken into clinical studies, wet-lab dosing, or medical use now**.*
 
 ---
 
