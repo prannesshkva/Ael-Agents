@@ -2,7 +2,14 @@
 
 > **Repository:** [`https://github.com/prannesshkva/Ael-Agents`](https://github.com/prannesshkva/Ael-Agents)
 >
+> **Evidence Slides in Repository:**
+> - **[`slide_1_mcp_connector_prompt.png`](https://github.com/prannesshkva/Ael-Agents/blob/main/benchmarks/evidence/slide_1_mcp_connector_prompt.png)** — 1-Click MCP Connector Toggle & 1-Sentence Plain-English Prompt
+> - **[`slide_2_fusion_mhd_scorecard_trace.png`](https://github.com/prannesshkva/Ael-Agents/blob/main/benchmarks/evidence/slide_2_fusion_mhd_scorecard_trace.png)** — Run 1: 12-Tesla Fusion MHD Blanket Scorecard (`34/40` vs. `15/40`) & Live 4-Tool Execution Trace
+> - **[`slide_3_quantum_cryocmos_trace.png`](https://github.com/prannesshkva/Ael-Agents/blob/main/benchmarks/evidence/slide_3_quantum_cryocmos_trace.png)** — Run 2: 100,000-Qubit Cryo-CMOS at 100 mK Execution Trace & Verified Architecture (`30/40` vs. `9/40`)
+>
 > **Scope & Disclaimer:** *All multi-physics, structural, magnetohydrodynamic (MHD), and cryogenic quantum hardware calculations in this benchmark are computational (*in-silico*) order-of-magnitude verification studies generated from self-selected physical parameters to evaluate AI engineering reasoning and self-falsification.*
+
+![Slide 1: 1-Click MCP Connector & 1-Sentence Prompt](https://raw.githubusercontent.com/prannesshkva/Ael-Agents/main/benchmarks/evidence/slide_1_mcp_connector_prompt.png)
 
 ---
 
@@ -81,6 +88,8 @@ Plus **7 additional coupled checks** verified in the same script:
 
 ## Run 1 — Stages 3 & 4: Blinded Peer Review & Rebuttal Scorecard
 
+![Slide 2: 12-Tesla Fusion MHD Blanket Scorecard & Live Execution Trace](https://raw.githubusercontent.com/prannesshkva/Ael-Agents/main/benchmarks/evidence/slide_2_fusion_mhd_scorecard_trace.png)
+
 When the standalone frontier LLM audited its own answer (**Response A**) against the verbatim `Ael-Agents` output (**Response B**), it immediately confessed its 30× structural formula error:
 
 > *"Here A has a genuine, serious engineering error that B catches... A square or rectangular duct does not carry internal pressure in pure hoop tension—its flat walls bend... A's 3-step 'self-consistent check' is therefore broken: it sized a rectangular duct with a circular-pipe formula, underpredicting the wall stress by more than an order of magnitude."*
@@ -117,6 +126,8 @@ Given the 1-sentence prompt without `Ael-Agents`, the standalone frontier LLM pr
 ---
 
 ## Run 2 — Stage 2: Frontier LLM + `Ael-Agents` MCP (Uncoached 1-Sentence Run)
+
+![Slide 3: 100,000-Qubit Cryo-CMOS Execution Trace & Verified Architecture](https://raw.githubusercontent.com/prannesshkva/Ael-Agents/main/benchmarks/evidence/slide_3_quantum_cryocmos_trace.png)
 
 Given the exact same 1-sentence prompt with `Ael-Agents` enabled, here is the verbatim output produced by the pipeline:
 

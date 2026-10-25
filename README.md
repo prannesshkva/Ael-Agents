@@ -28,11 +28,12 @@ Most multi-agent frameworks treat orchestration as ad-hoc prompt chaining: every
 
 ---
 
-> **Featured 3-Stage Benchmark & Audit ([`CASE_STUDY_GIST.md`](CASE_STUDY_GIST.md)):**
-> Read the full 3-stage evaluation comparing a standalone Frontier LLM against `Ael-Agents` MCP on CNS-active allosteric `EGFR-L858R/T790M/C797S` inhibitor design—including why the standalone model failed to produce a SMILES string, violated its own `MW <= 450 Da` rule, and made 4 audit errors that `Ael-Agents` had already solved on Pass 1.
-> - **Article / Gist:** [`CASE_STUDY_GIST.md`](CASE_STUDY_GIST.md) | **[Live GitHub Gist](https://gist.github.com/prannesshkva/637c5b9fcad19c99cf652b9ec6ef8e91)**
-> - **Verbatim PDF (`Ael-Agents` MCP Run):** [`benchmarks/evidence/Ael-agents.pdf`](benchmarks/evidence/Ael-agents.pdf)
-> - **Verbatim PDF (Standalone Baseline & Audit):** [`benchmarks/evidence/normal_llm.pdf`](benchmarks/evidence/normal_llm.pdf)
+> **Featured 2-Domain 1-Sentence Blinded Benchmark & Audit ([`CASE_STUDY_GIST.md`](CASE_STUDY_GIST.md)):**
+> Read the full 2-domain blinded evaluation comparing a standalone Frontier LLM against the exact same LLM connected to `Ael-Agents` (`v1.2.0`) on two plain-English 1-sentence engineering prompts:
+> 1. **12-Tesla Fusion Reactor Liquid-Metal MHD Blanket:** **`34 / 40` (`42 / 50` w/ breadth) with `Ael-Agents` vs. `15 / 40` (`21 / 50`) Standalone** ? catching a **30x structural hoop-stress formula error** (`sigma = Pr/t = 182 MPa` applied to a square duct where flat-plate bending is `sigma = Pb^2/(2t^2) = 6,050 MPa`) and programmatically verifying 5 candidate architectures (`A`?`E`).
+> 2. **100,000 Silicon Spin Qubits Wired to Cryo-CMOS at 100 mK:** **`30 / 40` with `Ael-Agents` vs. `9 / 40` Standalone (`3.3x` lift)** ? catching a **37x internal Bose-Einstein thermal photon error** (`n_bar = 3.7` vs. `0.1` at `4 K, 20 GHz`) inside the Python verifier and closing staged attenuation (`10 dB @ 1 K + 10 dB @ 100 mK -> 0.22 K, 120 uW`).
+> - **Full Article / Gist:** [`CASE_STUDY_GIST.md`](CASE_STUDY_GIST.md) | **[Live GitHub Gist](https://gist.github.com/prannesshkva/637c5b9fcad19c99cf652b9ec6ef8e91)**
+> - **Evidence Slides:** [`slide_1_mcp_connector_prompt.png`](benchmarks/evidence/slide_1_mcp_connector_prompt.png) | [`slide_2_fusion_mhd_scorecard_trace.png`](benchmarks/evidence/slide_2_fusion_mhd_scorecard_trace.png) | [`slide_3_quantum_cryocmos_trace.png`](benchmarks/evidence/slide_3_quantum_cryocmos_trace.png)
 
 ---
 
@@ -341,10 +342,11 @@ In **Cline** (`cline_mcp_settings.json`), add the same `"Ael-Agents"` block unde
 
 | MCP Tool Name | Needs API Key? | Exact Function in the Cortical Pipeline |
 | :--- | :---: | :--- |
-| **`Ael-Agents_propose_specialist_roster`** | **NO** | Partitions any user problem into `N = 4` orthogonal specialist domains (`preset="auto"`, `"drug_discovery"`, `"software_systems"`, `"general_first_principles"`, or custom YAML path). |
-| **`Ael-Agents_cortical_rdm_and_jacobian_gate`** | **NO** | Embeds the 4 specialist hypotheses into the 768-D `BAAI/bge-base-en-v1.5` manifold, computes the `4 × 4` **RDM** (`D_ij = 1 - S_ij`) & Participation Ratio, runs **0-token PyTorch autograd Jacobian sensitivity** (`J_i = \|\|∂y/∂w_i\|\|_2`), and gates strictly the top `k = 2` working-memory domains + **Epistemic Surprise Bridge**. |
+| **`Ael-Agents_propose_specialist_roster`** | **NO** | Partitions any 1-sentence problem into `N = 5` maximally orthogonal specialist domains via a **768-D Determinantal Point Process (`log det L_S`)** over a 20-axis Universal Scientific Basis or prompt-inferred candidate domains. |
+| **`Ael-Agents_cortical_rdm_and_jacobian_gate`** | **NO** | Embeds specialist hypotheses into the 768-D `BAAI/bge-base-en-v1.5` manifold, computes the `N x N` **RDM** (`D_ij = 1 - S_ij`) & Participation Ratio, runs **0-token PyTorch autograd Jacobian sensitivity** (`J_i = \|\|?y/?w_i\|\|_2`), and gates strictly the top `k = 2` working-memory domains + **Epistemic Surprise Bridge**. |
+| **`Ael-Agents_programmatic_verify`** | **NO** | **Anthropic-style Programmatic Tool Calling (PTC) Scientific Verifier**: executes a self-contained Python verification script (`numpy`, `scipy`, `torch`, `rdkit`, `record_candidate`) in a single pass to test and reject candidate designs against coupled physical inequalities before synthesis. |
 | **`Ael-Agents_dream_rsi_consolidate`** | **NO** | Runs offline **Dream-RSI** sleep consolidation: executes `epochs` (default `15`) of Adam gradient descent on `UnifiedCortexLoss(w)` and verifies free-energy reduction (`F_dream <= F_wake`). |
-| **`Ael-Agents_verify_molecule_pkpd`** | **NO** | Deterministic **RDKit** molecular compiler (SMILES validity, MW, LogP, TPSA, HBD/HBA, Lipinski, QED) + **SciPy (`solve_ivp`, RK45)** 2-compartment oral PK/PD ODE solver. |
+| **`Ael-Agents_verify_molecule_pkpd`** | **NO** | Deterministic **RDKit** molecular compiler (SMILES validity, MW, LogP, TPSA, HBD/HBA, Lipinski, QED, SMARTS alerts) + **SciPy (`solve_ivp`, RK45)** 2-compartment oral PK/PD ODE solver. |
 | **`Ael-Agents_run_autonomous_pipeline`** | **YES (`GROQ_API_KEY`)** | Runs the standalone multi-threaded `JacobianRSACortexFramework` + `DreamRSILoop` + `mct` pipeline using your configured API key pool. |
 
 ### 7. Copy-Paste Prompt to Trigger the Full `Ael-Agents` Workflow in Claude or Cursor
