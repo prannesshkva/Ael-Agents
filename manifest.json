@@ -1,0 +1,68 @@
+{
+  "manifest_version": "0.3",
+  "name": "Ael-Agents",
+  "display_name": "Ael-Agents",
+  "version": "1.2.0",
+  "description": "Trainable Jacobian-RSA Cortical Multi-Agent & Programmatic Tool Calling (PTC) Co-Processor",
+  "long_description": "Ael-Agents is a domain-agnostic trainable cortical multi-agent reasoning framework combining Determinantal Point Process (DPP) specialist decomposition, 768-D BGE Representational Similarity Analysis (DMN), 0-token PyTorch autograd Jacobian working-memory gating (SN -> CEN), Dream-RSI free-energy consolidation, and Anthropic-style Programmatic Tool Calling (PTC) scientific verification.",
+  "author": {
+    "name": "Prannessh K V A",
+    "url": "https://github.com/prannesshkva/Ael-Agents"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/prannesshkva/Ael-Agents"
+  },
+  "homepage": "https://github.com/prannesshkva/Ael-Agents",
+  "documentation": "https://github.com/prannesshkva/Ael-Agents",
+  "icon": "icon.png",
+  "server": {
+    "type": "python",
+    "entry_point": "mcp_server.py",
+    "mcp_config": {
+      "command": "python",
+      "args": [
+        "/mcp_server.py"
+      ],
+      "env": {
+        "PYTHONUNBUFFERED": "1",
+        "PYTHONUTF8": "1",
+        "KMP_DUPLICATE_LIB_OK": "TRUE",
+        "TOKENIZERS_PARALLELISM": "false"
+      }
+    }
+  },
+  "tools": [
+    {
+      "name": "Ael-Agents_propose_specialist_roster",
+      "description": "Decompose any problem into N mutually orthogonal specialist domains via 768-D DPP volume maximization."
+    },
+    {
+      "name": "Ael-Agents_cortical_rdm_and_jacobian_gate",
+      "description": "Zero-token PyTorch Cortical RDM & Autograd Jacobian working-memory bottleneck gate."
+    },
+    {
+      "name": "Ael-Agents_dream_rsi_consolidate",
+      "description": "Offline Dream-RSI free-energy minimization (F_dream <= F_wake)."
+    },
+    {
+      "name": "Ael-Agents_programmatic_verify",
+      "description": "Anthropic-style Programmatic Tool Calling (PTC) deterministic scientific verifier."
+    },
+    {
+      "name": "Ael-Agents_run_autonomous_pipeline",
+      "description": "Execute the complete autonomous Ael-Agents pipeline."
+    }
+  ],
+  "license": "CC-BY-NC-ND-4.0",
+  "compatibility": {
+    "platforms": [
+      "win32",
+      "darwin",
+      "linux"
+    ],
+    "runtimes": {
+      "python": ">=3.10"
+    }
+  }
+}
