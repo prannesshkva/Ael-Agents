@@ -125,6 +125,18 @@ def evaluate_rdkit_smiles(smiles: Optional[str]) -> Dict[str, Any]:
 
     violations = int(mw > 500.0) + int(logp > 5.0) + int(hbd > 5) + int(hba > 10)
     cns_optimal = bool(mw <= 450.0 and 1.5 <= logp <= 4.2 and tpsa <= 90.0 and hbd <= 2)
+    chiral_centers = Chem.FindMolChiralCenters(mol, includeUnassigned=True)
+    unspecified_chiral = sum(1 for _, tag in chiral_centers if tag == "?")
+    smarts_defs = {
+        "aryl_aldehyde_aox_liability": "[c][CH1]=O",
+        "salicylaldehyde_stabilized_imine": "[c]([OH1]):[c][CH1]=O",
+        "aminothiazole_structural_alert": "N-c1nccs1",
+        "unmasked_phenol_glucuronidation": "c[OH1]",
+    }
+    smarts_alerts = {}
+    for alert_name, pattern in smarts_defs.items():
+        pat_mol = Chem.MolFromSmarts(pattern)
+        smarts_alerts[alert_name] = bool(pat_mol is not None and mol.HasSubstructMatch(pat_mol))
     return {
         "valid_smiles": True,
         "smiles": Chem.MolToSmiles(mol),
@@ -141,6 +153,8 @@ def evaluate_rdkit_smiles(smiles: Optional[str]) -> Dict[str, Any]:
         "cns_bbb_optimal": cns_optimal,
         "qed_druglikeness": round(qed_score, 4),
         "heavy_atom_count": heavy_atoms,
+        "unspecified_stereocenters": unspecified_chiral,
+        "smarts_structural_alerts": smarts_alerts,
     }
 
 def simulate_two_compartment_pkpd(

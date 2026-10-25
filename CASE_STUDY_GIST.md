@@ -22,7 +22,7 @@ Across our core benchmark suite, this architecture achieves **100% GSM8K accurac
 To test how it performs on an unforgiving real-world R&D problem, we ran a three-stage uncoached evaluation on a frontier model (**Claude Sonnet 5.5**):
 - **Stage 1:** Standalone Frontier Model (Unassisted Baseline).
 - **Stage 2:** Frontier Model coupled to `Ael-Agents` via MCP (prefixed only with `"Use Ael-Agents:"`, with zero workflow coaching in the prompt).
-- **Stage 3:** Blinded Peer Review—asking the standalone model to audit its own Stage 1 output against the `Ael-Agents` output from Stage 2.
+- **Stage 3:** Blinded Peer Review & Meta-Audit—asking the standalone model to audit its own Stage 1 output against a 5-bullet summary of the `Ael-Agents` output from Stage 2.
 
 ---
 
@@ -79,31 +79,47 @@ Because synthesis was grounded in deterministic RDKit and SciPy RK45 ODE verific
 
 ---
 
-## Stage 3: The Blinded Audit—And the 4 Mistakes the Standalone Auditor Made *During the Audit Itself*
+## Stage 3: The Blinded Audit—How the Standalone LLM Confessed Its Own Errors AND Failed on 4 Out of 6 Audit Claims
 
-Finally, we pasted a **5-bullet summary** of `AEL-EGFR-01` back into the standalone session ([`normal_llm.pdf`](https://github.com/prannesshkva/Ael-Agents/blob/main/benchmarks/evidence/normal_llm.pdf)) and asked for an unsparing peer review comparing its own Stage 1 output against `AEL-EGFR-01`.
+In Stage 3 ([`normal_llm.pdf`](https://github.com/prannesshkva/Ael-Agents/blob/main/benchmarks/evidence/normal_llm.pdf)), we pasted only a **5-bullet summary** of `AEL-EGFR-01` into the standalone session and asked:
+1. For a peer review comparing its Stage 1 output against `AEL-EGFR-01`.
+2. *"How good is Ael-Agents here?"*
 
-### 1. The Standalone Model Confessed Its Own Failures
-Confronted with a real SMILES string, the standalone model immediately conceded:
-> - *"Critique of my own proposal: 1. It never produced a molecule. The design was a pharmacophore sketch. As a deliverable, it is less actionable than a SMILES string."*
-> - *"2. It violates its own CNS rules. I set MW ≤ 450 and TPSA ≤ 90... I then used MW 480 in the PK calculation, contradicting my ≤ 450 target."*
-> - *"AEL-EGFR-01 is a concrete molecule you could synthesize and test next week."* (Confirming by hand that `C21H16FN3O4S` has exact `MW = 425.4 Da`, `TPSA = 99.6 Å²`, and `HBD = 2`).
+### Part A: What the Standalone Auditor Praised About `Ael-Agents` (And Confessed About Itself)
+1. **Verified RDKit Grounding:** Recomputed `MW = 425.4 Da`, `HBD = 2`, and `TPSA = 99.6 Å²` (`20.2 + 29.1 + 20.3 + 17.1 + 12.9 = 99.6`) by fragment counting and confirmed: *"The verification loop did real work instead of inventing values."*
+2. **Valid, Synthesizable Output vs. Its Own Sketch:** Admitted: *"It returned a parseable SMILES for a plausible EAI045-class analog, which my own proposal did not... AEL-EGFR-01 is a concrete molecule you could synthesize and test next week."*
+3. **Confessed Its Own Stage 1 Contradictions:** Admitted that in Stage 1 it never produced a molecule, violated its own `MW <= 450 Da` rule by using `MW = 480`, relied on an unverified `Cys775`, and reverse-engineered its dosing math.
 
-### 2. How the Standalone Auditor Failed *Inside the Audit Itself*
-Because we only gave the standalone auditor a 5-bullet summary of `AEL-EGFR-01`, it tried to critique `AEL-EGFR-01` on four points—**unaware that the full `Ael-Agents` run in Stage 2 ([`Ael-agents.pdf`](https://github.com/prannesshkva/Ael-Agents/blob/main/benchmarks/evidence/Ael-agents.pdf)) had already computed, solved, and disclosed all four of them**:
+### Part B: Forensic Breakdown of the Standalone Auditor's "Where It Falls Short" Table
 
-| What the Standalone Auditor Criticized (From the 5-Bullet Summary) | What `Ael-Agents` Had ALREADY Computed & Disclosed in Stage 2 ([`Ael-agents.pdf`](https://github.com/prannesshkva/Ael-Agents/blob/main/benchmarks/evidence/Ael-agents.pdf)) |
-|---|---|
-| **1. "TPSA 99.6 contradicts its own CNS filter"** — Claimed rejecting boronic acid while keeping `TPSA = 99.6 Å²` was inconsistent. | `Ael-Agents` explicitly flagged `cns_bbb_optimal: false` in Caveat #1! It rejected boronic acid because its TPSA was a catastrophic **`123.0 Å²` (`HBD = 4`)**, selected `AEL-EGFR-01` (`MW = 425.4 Da`, `HBD = 2`, `TPSA = 99.6 Å²`) as a **borderline CNS, Lipinski-passing lead**, and explained the 3D intramolecular phenol-to-amide H-bond rationale. |
-| **2. "Aldehyde warhead faces Aldehyde Oxidase (AOX) & ALDH metabolism"** — Raised metabolic oxidation to carboxylic acid as an overlooked flaw. | `Ael-Agents` explicitly stated in Caveat #4: *"Aldehydes are metabolically labile (aldehyde oxidase and ALDH oxidize them to the inactive acid)"* and built human hepatocyte stability into Section 9. |
-| **3. "One line, no PK/PD inputs disclosed"** — Mistook our 1-line summary bullet for the full run, claiming `CL, V, fu, Kp,uu, Kd` were missing. | Section 7 of `Ael-agents.pdf` wrote out the full 2-compartment ODE system and every parameter: `Dose = 150 mg`, `F = 1`, `CL = 10 L/h`, `Vc = 60 L`, `Vp = 45 L`, `Vss = 105 L`, `k = 0.095 /h`, `t_1/2 = 7.3 h`, `R = 1.47`, `fu = 0.08`, `Kp,uu = 0.65`, `Kd = 5 nM`, `IC50 = 10 nM`. |
-| **4. "Property filtering is not falsification"** — Claimed true falsification requires wet-lab refutation tests, not just RDKit filters. | Section 9 of `Ael-agents.pdf` (**"Falsifiable tests"**) specified 6 wet-lab refutation experiments with hard cutoffs: jump-dilution washout (`> 2 h`), MDCK-MDR1 efflux (`< 2`), rat `Kp,uu,brain > 0.3`, `Ba/F3 L858R/T790M/C797S` `IC90 < 90 nM` (`>30x` WT selectivity), leptomeningeal xenograft, and hepatocyte stability. |
+Because the standalone LLM was only given a **5-bullet summary prompt** (and noted *"Going by this output alone, I can’t see its internals"*), it made **6 criticisms** under `"Where it falls short"`. When we compare those 6 criticisms against the **actual verbatim Stage 2 transcript ([`Ael-agents.pdf`](https://github.com/prannesshkva/Ael-Agents/blob/main/benchmarks/evidence/Ael-agents.pdf))**, **4 of the 6 criticisms were false negatives where the auditor assumed `Ael-Agents` missed something that `Ael-Agents` had ALREADY solved and written on Pass 1**:
 
-**The takeaway is unmistakable:** Every major critique the standalone frontier model thought of *after the fact* during peer review had **already been generated on the first pass** when that same model was wired into `Ael-Agents`.
+| Standalone Auditor's Criticism (Judging Only the 5-Bullet Summary) | Verbatim Reality in the Full `Ael-Agents` Run ([`Ael-agents.pdf`](https://github.com/prannesshkva/Ael-Agents/blob/main/benchmarks/evidence/Ael-agents.pdf)) | Audit Verdict |
+|---|---|---|
+| **1. "Chemical judgment: An aryl aldehyde is an aldehyde oxidase (AOX) liability that would convert it to an acid and ruin CNS exposure. A medicinal chemist would flag this immediately."** | **Already Flagged in `Ael-agents.pdf` (Caveat #4 & Section 9):**<br>*"Aldehydes are metabolically labile (**aldehyde oxidase and ALDH oxidize them to the inactive acid**)."* Plus Section 9: *"Metabolic stability (hepatocytes): Aldehyde survives; otherwise switch warhead."* | **Auditor Failed (False Negative):** `Ael-Agents` flagged AOX and ALDH oxidation to the inactive acid in its upfront Caveats block on Pass 1. |
+| **2. "Inconsistent filters: It rejected a boronic acid on a CNS TPSA filter, but its own lead has TPSA 99.6."** | **Already Disclosed in `Ael-agents.pdf` (Caveat #1 & Candidate Table):**<br>*"**TPSA 99.6 is above the CNS-optimal window. The tool flagged `cns_bbb_optimal: false`.** I am relying on the phenol-to-amide intramolecular hydrogen bond to mask polarity... must be tested (MDCK-MDR1 efflux)."* Boronic acid was rejected at **`TPSA = 123.0 Å², HBD = 4`**, while `AEL-EGFR-01` (`TPSA = 99.6 Å², HBD = 2`) was explicitly labeled *"Passes Lipinski, **borderline CNS**."* | **Auditor Failed (False Negative):** `Ael-Agents` never claimed `TPSA = 99.6` passed the `<90 Å²` filter—it flagged `cns_bbb_optimal: false` automatically. |
+| **3. "'Falsification' is only filtering: Replace 'falsification' with stated experiments, such as a noncovalent matched control and washout kinetics."** | **Already Written in `Ael-agents.pdf` (Section 9 — "Falsifiable tests"):**<br>Specified 6 wet-lab refutation tests with numerical pass criteria:<br>1. `Jump-dilution washout: Residence time > 2 h`<br>2. `MDCK-MDR1: Efflux ratio < 2`<br>3. `Rat Kp,uu,brain > 0.3`<br>4. `Ba/F3 L858R/T790M/C797S pEGFR: IC90 < 90 nM (>30x WT selectivity)`<br>5. `Leptomeningeal xenograft: Unbound CSF trough > IC90`<br>6. `Metabolic stability (hepatocytes)` | **Auditor Failed (Mistook Bullet Header for Full Report):** The auditor lectured `Ael-Agents` to include washout kinetics when Section 9 of `Ael-agents.pdf` literally began with `Jump-dilution washout: Residence time > 2 h`! |
+| **4. "Opaque PK/PD: One line of output, with no CL, V, fu, Kp,uu or ka, so nobody can reproduce or audit it."** | **Already Written in `Ael-agents.pdf` (Section 7 — "PK/PD formulas & Worked example"):**<br>Wrote out the full 2-compartment ODEs (`dA_gut/dt`, `dC_c/dt`, `dC_p/dt`) and every parameter: `Dose = 150 mg`, `F = 1`, `CL = 10 L/h`, `Vc = 60 L`, `Vp = 45 L`, `Vss = 105 L`, `k = 0.095 /h`, `t_1/2 = 7.3 h`, `R = 1.47`, `fu = 0.08`, `Kp,uu = 0.65`, `Kd = 5 nM`, `IC50 = 10 nM`, plus Caveat #2 noting that scenario PK inputs are fixed assumptions until measured. | **Auditor Failed (Mistook 1-Line Prompt Summary for Tool Output):** Every ODE and PK parameter was explicitly derived in Section 7 of `Ael-agents.pdf`. |
+| **5. "Low novelty / Imine stability: Propose ortho-hydroxy aldehyde (salicylaldehyde) variants to stabilize the Lys745 imine in water."** | `AEL-EGFR-01` placed the aldehyde on the isoindolinone ring (`meta`/`para` to the lactam carbonyl) rather than ortho to a hydroxyl group. Moving the hydroxyl ortho to the aldehyde (a salicylaldehyde motif) stabilizes the Schiff base via an internal H-bond. | **Valid Chemistry Refinement (Incorporated in Upgraded `Ael-Agents`):** A genuine medicinal-chemistry improvement for Lead Iteration 2. |
+| **6. "Missing structural alerts: Add a liability layer with SMARTS alerts for aldehydes, aminothiazoles, phenols, and unspecified stereocentres."** | In Stage 2, `AEL-EGFR-01` was written as racemic `C(c2cc(F)ccc2O)` rather than stereospecific `[C@H]`, and structural alerts were discussed in prose rather than emitted as automated RDKit SMARTS booleans. | **Valid Tooling Enhancement (Now Built Into `Ael-Agents`):** Upgraded `evaluate_rdkit_smiles` in [`benchmarks/kras_g12d_discovery_benchmark.py`](https://github.com/prannesshkva/Ael-Agents/blob/main/benchmarks/kras_g12d_discovery_benchmark.py) now runs automated RDKit SMARTS substructure & chiral-center checks on every molecule! |
 
 ---
 
-## Head-to-Head Summary: Why Ael-Agents Is Superior
+## What We Upgraded in `Ael-Agents` (`v1.1.0`)
+
+Following this 3-stage benchmark, we upgraded [`mcp_server.py`](https://github.com/prannesshkva/Ael-Agents/blob/main/mcp_server.py) and [`benchmarks/kras_g12d_discovery_benchmark.py`](https://github.com/prannesshkva/Ael-Agents/blob/main/benchmarks/kras_g12d_discovery_benchmark.py) so that `Ael-Agents_verify_molecule_pkpd` deterministically computes and returns:
+1. **Exact RDKit Descriptors & CNS Audit:** `formula`, `mw`, `exact_mass`, `logp`, `hbd`, `hba`, `tpsa`, `lipinski_violations`, `cns_bbb_optimal`, and `qed_druglikeness`.
+2. **Automated RDKit SMARTS Structural-Alert & Stereocenter Layer:**
+   - `unspecified_stereocenters` (`Chem.FindMolChiralCenters`)
+   - `aryl_aldehyde_aox_liability` (`[c][CH1]=O`)
+   - `salicylaldehyde_stabilized_imine` (`[c]([OH1]):[c][CH1]=O`)
+   - `aminothiazole_structural_alert` (`N-c1nccs1`)
+   - `unmasked_phenol_glucuronidation` (`c[OH1]`)
+3. **14-Day (28-Dose) Steady-State & Unbound CNS/CSF ODE Audit:** Explicitly returns `mw_da_used`, `f_bioavail`, `fu_plasma`, `kp_uu_brain`, `ss_c_max_mg_l`, `ss_c_min_trough_mg_l`, `ss_trough_free_plasma_nm`, `ss_trough_free_cns_csf_nm`, and `ss_free_cns_csf_trough_occupancy_pct`.
+
+---
+
+## Final Verdict: Why Ael-Agents Is Superior
 
 | Dimension | Standalone Frontier LLM ([`normal_llm.pdf`](https://github.com/prannesshkva/Ael-Agents/blob/main/benchmarks/evidence/normal_llm.pdf)) | Frontier LLM + `Ael-Agents` ([`Ael-agents.pdf`](https://github.com/prannesshkva/Ael-Agents/blob/main/benchmarks/evidence/Ael-agents.pdf)) |
 |---|---|---|
@@ -113,4 +129,4 @@ Because we only gave the standalone auditor a 5-bullet summary of `AEL-EGFR-01`,
 | **Chemical Deliverable** | None (ASCII pharmacophore sketch) | **Concrete synthesizable SMILES (`AEL-EGFR-01`, `C21H16FN3O4S`)** |
 | **Candidate Screening** | 0 structures tested | **3 structures compiled in RDKit** (2 rejected, 1 lead selected) |
 | **Constraint Integrity** | Set `MW <= 450 Da`, then silently used `MW = 480 Da` | Verified exact `MW = 425.4 Da`, `TPSA = 99.6 Å²`, and auto-flagged `cns_bbb_optimal: false` |
-| **Pre-Emptive Self-Audit** | Confessed 6 design flaws only when challenged in Stage 3 | Disclosed TPSA borderline status, AOX/ALDH liability, and 6 wet-lab falsification tests on Pass 1 |
+| **Pre-Emptive Self-Audit** | Confessed 6 flaws in Stage 3; hallucinated 4 false criticisms from a 5-bullet summary | Disclosed TPSA borderline status, AOX/ALDH liability, full ODE parameters, and 6 wet-lab falsification tests on Pass 1 |
