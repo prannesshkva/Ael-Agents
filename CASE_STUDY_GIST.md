@@ -1,8 +1,8 @@
 # Why Even Frontier LLMs Need a Prefrontal Cortex: A 3-Stage Benchmark & Audit of Ael-Agents
 
 > **Raw Verbatim Chat Transcripts (PDFs in Repository):**
-> - **[`Ael-agents.pdf`](benchmarks/evidence/Ael-agents.pdf)** — Uncoached Frontier LLM + `Ael-Agents` MCP Run (Stage 2)
-> - **[`normal_llm.pdf`](benchmarks/evidence/normal_llm.pdf)** — Standalone Frontier LLM Baseline & Post-Hoc Self-Audit (Stages 1 & 3)
+> - **[`Ael-agents.pdf`](https://github.com/prannesshkva/Ael-Agents/blob/main/benchmarks/evidence/Ael-agents.pdf)** — Uncoached Frontier LLM + `Ael-Agents` MCP Run (Stage 2)
+> - **[`normal_llm.pdf`](https://github.com/prannesshkva/Ael-Agents/blob/main/benchmarks/evidence/normal_llm.pdf)** — Standalone Frontier LLM Baseline & Post-Hoc Self-Audit (Stages 1 & 3)
 
 ---
 
@@ -38,7 +38,7 @@ Why this problem is a true stress test:
 
 ## Stage 1: The Standalone Frontier Model (Unassisted Baseline)
 
-Running standalone ([`normal_llm.pdf`](benchmarks/evidence/normal_llm.pdf)), the frontier model produced a polished 2,000-word pharmacometric walkthrough. At a glance, it looked comprehensive. Under inspection, **it failed the core design requirements in six ways** (all six of which the model later confessed to in Stage 3):
+Running standalone ([`normal_llm.pdf`](https://github.com/prannesshkva/Ael-Agents/blob/main/benchmarks/evidence/normal_llm.pdf)), the frontier model produced a polished 2,000-word pharmacometric walkthrough. At a glance, it looked comprehensive. Under inspection, **it failed the core design requirements in six ways** (all six of which the model later confessed to in Stage 3):
 
 1. **Zero Synthesizable Structure:** Instead of producing a chemical structure (SMILES), it drew an ASCII conceptual sketch:
    `[Hydroxy-aryl] ── [Chiral α-carbon] ── [Isoindolinone] ── [Heteroaryl amide] ── [Linker] ── [α-cyanoacrylamide warhead]`
@@ -52,7 +52,7 @@ Running standalone ([`normal_llm.pdf`](benchmarks/evidence/normal_llm.pdf)), the
 
 ## Stage 2: Frontier Model + Ael-Agents (Uncoached MCP Run)
 
-In a separate session ([`Ael-agents.pdf`](benchmarks/evidence/Ael-agents.pdf)), we gave the exact same prompt prefixed only with `"Use Ael-Agents:"`—with zero workflow instructions in the prompt. The model autonomously executed the 4-step cortical pipeline:
+In a separate session ([`Ael-agents.pdf`](https://github.com/prannesshkva/Ael-Agents/blob/main/benchmarks/evidence/Ael-agents.pdf)), we gave the exact same prompt prefixed only with `"Use Ael-Agents:"`—with zero workflow instructions in the prompt. The model autonomously executed the 4-step cortical pipeline:
 
 ### 1. Zero-Token Jacobian Gating & Free-Energy Reduction
 `Ael-Agents` segregated the problem into four orthogonal specialists (`StructuralBiophysics`, `SystemsPharmacology`, `MedicinalChemistryADMET`, `ClinicalPKPDControl`), computed the 768-D BGE RDM, and applied the PyTorch Jacobian gate:
@@ -81,7 +81,7 @@ Because synthesis was grounded in deterministic RDKit and SciPy RK45 ODE verific
 
 ## Stage 3: The Blinded Audit—And the 4 Mistakes the Standalone Auditor Made *During the Audit Itself*
 
-Finally, we pasted a **5-bullet summary** of `AEL-EGFR-01` back into the standalone session ([`normal_llm.pdf`](benchmarks/evidence/normal_llm.pdf)) and asked for an unsparing peer review comparing its own Stage 1 output against `AEL-EGFR-01`.
+Finally, we pasted a **5-bullet summary** of `AEL-EGFR-01` back into the standalone session ([`normal_llm.pdf`](https://github.com/prannesshkva/Ael-Agents/blob/main/benchmarks/evidence/normal_llm.pdf)) and asked for an unsparing peer review comparing its own Stage 1 output against `AEL-EGFR-01`.
 
 ### 1. The Standalone Model Confessed Its Own Failures
 Confronted with a real SMILES string, the standalone model immediately conceded:
@@ -90,9 +90,9 @@ Confronted with a real SMILES string, the standalone model immediately conceded:
 > - *"AEL-EGFR-01 is a concrete molecule you could synthesize and test next week."* (Confirming by hand that `C21H16FN3O4S` has exact `MW = 425.4 Da`, `TPSA = 99.6 Å²`, and `HBD = 2`).
 
 ### 2. How the Standalone Auditor Failed *Inside the Audit Itself*
-Because we only gave the standalone auditor a 5-bullet summary of `AEL-EGFR-01`, it tried to critique `AEL-EGFR-01` on four points—**unaware that the full `Ael-Agents` run in Stage 2 ([`Ael-agents.pdf`](benchmarks/evidence/Ael-agents.pdf)) had already computed, solved, and disclosed all four of them**:
+Because we only gave the standalone auditor a 5-bullet summary of `AEL-EGFR-01`, it tried to critique `AEL-EGFR-01` on four points—**unaware that the full `Ael-Agents` run in Stage 2 ([`Ael-agents.pdf`](https://github.com/prannesshkva/Ael-Agents/blob/main/benchmarks/evidence/Ael-agents.pdf)) had already computed, solved, and disclosed all four of them**:
 
-| What the Standalone Auditor Criticized (From the 5-Bullet Summary) | What `Ael-Agents` Had ALREADY Computed & Disclosed in Stage 2 ([`Ael-agents.pdf`](benchmarks/evidence/Ael-agents.pdf)) |
+| What the Standalone Auditor Criticized (From the 5-Bullet Summary) | What `Ael-Agents` Had ALREADY Computed & Disclosed in Stage 2 ([`Ael-agents.pdf`](https://github.com/prannesshkva/Ael-Agents/blob/main/benchmarks/evidence/Ael-agents.pdf)) |
 |---|---|
 | **1. "TPSA 99.6 contradicts its own CNS filter"** — Claimed rejecting boronic acid while keeping `TPSA = 99.6 Å²` was inconsistent. | `Ael-Agents` explicitly flagged `cns_bbb_optimal: false` in Caveat #1! It rejected boronic acid because its TPSA was a catastrophic **`123.0 Å²` (`HBD = 4`)**, selected `AEL-EGFR-01` (`MW = 425.4 Da`, `HBD = 2`, `TPSA = 99.6 Å²`) as a **borderline CNS, Lipinski-passing lead**, and explained the 3D intramolecular phenol-to-amide H-bond rationale. |
 | **2. "Aldehyde warhead faces Aldehyde Oxidase (AOX) & ALDH metabolism"** — Raised metabolic oxidation to carboxylic acid as an overlooked flaw. | `Ael-Agents` explicitly stated in Caveat #4: *"Aldehydes are metabolically labile (aldehyde oxidase and ALDH oxidize them to the inactive acid)"* and built human hepatocyte stability into Section 9. |
@@ -105,7 +105,7 @@ Because we only gave the standalone auditor a 5-bullet summary of `AEL-EGFR-01`,
 
 ## Head-to-Head Summary: Why Ael-Agents Is Superior
 
-| Dimension | Standalone Frontier LLM ([`normal_llm.pdf`](benchmarks/evidence/normal_llm.pdf)) | Frontier LLM + `Ael-Agents` ([`Ael-agents.pdf`](benchmarks/evidence/Ael-agents.pdf)) |
+| Dimension | Standalone Frontier LLM ([`normal_llm.pdf`](https://github.com/prannesshkva/Ael-Agents/blob/main/benchmarks/evidence/normal_llm.pdf)) | Frontier LLM + `Ael-Agents` ([`Ael-agents.pdf`](https://github.com/prannesshkva/Ael-Agents/blob/main/benchmarks/evidence/Ael-agents.pdf)) |
 |---|---|---|
 | **Routing Overhead** | Single-stream context collapse | **0 LLM Router Tokens** (PyTorch Autograd Jacobian `J_i = \|\|∂y/∂w_i\|\|_2`) |
 | **Cross-Domain Gating** | Blurs all constraints together | **Salience Gate (`k = 2`)** isolates `SystemsPharmacology <--> MedicinalChemistry` |
