@@ -33,7 +33,6 @@ Most multi-agent frameworks treat orchestration as ad-hoc prompt chaining: every
 > 1. **12-Tesla Fusion Reactor Liquid-Metal MHD Blanket:** **`34 / 40` (`42 / 50` w/ breadth) with `Ael-Agents` vs. `15 / 40` (`21 / 50`) Standalone** ? catching a **30x structural hoop-stress formula error** (`sigma = Pr/t = 182 MPa` applied to a square duct where flat-plate bending is `sigma = Pb^2/(2t^2) = 6,050 MPa`) and programmatically verifying 5 candidate architectures (`A`?`E`).
 > 2. **100,000 Silicon Spin Qubits Wired to Cryo-CMOS at 100 mK:** **`30 / 40` with `Ael-Agents` vs. `9 / 40` Standalone (`3.3x` lift)** ? catching a **37x internal Bose-Einstein thermal photon error** (`n_bar = 3.7` vs. `0.1` at `4 K, 20 GHz`) inside the Python verifier and closing staged attenuation (`10 dB @ 1 K + 10 dB @ 100 mK -> 0.22 K, 120 uW`).
 > - **Full Article / Gist:** [`CASE_STUDY_GIST.md`](CASE_STUDY_GIST.md) | **[Live GitHub Gist](https://gist.github.com/prannesshkva/637c5b9fcad19c99cf652b9ec6ef8e91)**
-> - **Evidence Slides:** [`slide_1_mcp_connector_prompt.png`](benchmarks/evidence/slide_1_mcp_connector_prompt.png) | [`slide_2_fusion_mhd_scorecard_trace.png`](benchmarks/evidence/slide_2_fusion_mhd_scorecard_trace.png) | [`slide_3_quantum_cryocmos_trace.png`](benchmarks/evidence/slide_3_quantum_cryocmos_trace.png)
 
 ---
 
