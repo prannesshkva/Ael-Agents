@@ -30,7 +30,7 @@ Most multi-agent frameworks treat orchestration as ad-hoc prompt chaining: every
 
 > **Featured 3-Stage Benchmark & Audit ([`CASE_STUDY_GIST.md`](CASE_STUDY_GIST.md)):**
 > Read the full 3-stage evaluation comparing a standalone Frontier LLM against `Ael-Agents` MCP on CNS-active allosteric `EGFR-L858R/T790M/C797S` inhibitor design—including why the standalone model failed to produce a SMILES string, violated its own `MW <= 450 Da` rule, and made 4 audit errors that `Ael-Agents` had already solved on Pass 1.
-> - **Article / Gist:** [`CASE_STUDY_GIST.md`](CASE_STUDY_GIST.md)
+> - **Article / Gist:** [`CASE_STUDY_GIST.md`](CASE_STUDY_GIST.md) | **[Live GitHub Gist](https://gist.github.com/prannesshkva/637c5b9fcad19c99cf652b9ec6ef8e91)**
 > - **Verbatim PDF (`Ael-Agents` MCP Run):** [`benchmarks/evidence/Ael-agents.pdf`](benchmarks/evidence/Ael-agents.pdf)
 > - **Verbatim PDF (Standalone Baseline & Audit):** [`benchmarks/evidence/normal_llm.pdf`](benchmarks/evidence/normal_llm.pdf)
 
