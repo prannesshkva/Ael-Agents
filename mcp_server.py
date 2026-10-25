@@ -90,64 +90,104 @@ GLOBAL_MCP_STATE = CorticalMCPState()
 
 UNIVERSAL_SCIENTIFIC_BASIS: List[Dict[str, str]] = [
     {
-        "name": "ContinuumFluidTransport",
-        "title": "Continuum Mechanics, Fluid Dynamics & Coupled Transport Phenomena",
-        "focus": "Navier-Stokes conservation of momentum, boundary-layer advection-diffusion PDEs, multiphase heat/mass transfer, Nusselt/Peclet scaling, and pressure-drop hydraulics.",
+        "name": "StructuralBiophysicsMolecularRecognition",
+        "title": "Structural Biophysics, Allostery & Molecular Recognition",
+        "focus": "3D protein/receptor pocket geometry, conformational free-energy landscapes, binding thermodynamics (dG = dH - T*dS), dissociation constants (Kd), and residence time (1/k_off).",
     },
     {
-        "name": "ElectrodynamicsFieldTheory",
-        "title": "Electrodynamics, Magnetohydrodynamics & High-Field Interactions",
-        "focus": "Maxwell's equations, Lorentz force coupling (J x B), Hartmann/Stuart magnetohydrodynamic scaling, electromagnetic wave propagation, skin depth, and superconducting field limits.",
+        "name": "SystemsBiologyGeneSignalingNetworks",
+        "title": "Quantitative Systems Biology, Signaling Cascades & Gene Networks",
+        "focus": "Coupled intracellular signaling ODEs, Hill cooperativity, gene regulatory bistability, compensatory feedback/resistance loops, and synthetic lethality.",
     },
     {
-        "name": "ThermodynamicsStatisticalPhysics",
-        "title": "Non-Equilibrium Thermodynamics, Statistical Mechanics & Energy Conversion",
-        "focus": "First and Second Law exergy budgets, Carnot/Brayton cycle limits, entropy production minimization, Boltzmann transport, phase equilibria, and radiative heat transfer.",
+        "name": "MedicinalChemistryADMETTransport",
+        "title": "Medicinal Chemistry, Molecular Scaffolds & ADMET Membrane Transport",
+        "focus": "Chemical graph/SMILES validity, lipophilicity (LogP), polar surface area (TPSA), blood-brain/cellular permeability fluxes, CYP450/AOX metabolic stability, and off-target toxicity.",
     },
     {
-        "name": "SolidMechanicsMaterials",
-        "title": "Solid Mechanics, Thermo-Elasticity & Materials Degradation",
-        "focus": "Cauchy stress-strain tensors, Von Mises/ASME membrane and bending limits, secondary thermo-elastic stress, creep-rupture kinetics, fracture toughness, and radiation/chemical corrosion.",
+        "name": "PharmacokineticsCompartmentalControl",
+        "title": "Multi-Compartment Pharmacokinetics, Dosing Dynamics & Therapeutic Index",
+        "focus": "2-compartment PK/PD differential equations, systemic clearance (CL), volume of distribution (Vd), bioavailability (F), steady-state trough target occupancy, and dosing control.",
     },
     {
-        "name": "QuantumAtomicPhysics",
-        "title": "Quantum Mechanics, Electronic Structure & Coherent Dynamics",
-        "focus": "Hamiltonian eigenstates, Lindblad decoherence/dephasing rates, tunneling probabilities, spin/optical transitions, nuclear cross-sections, and quantum measurement noise limits.",
+        "name": "EvolutionaryGeneticsImmunology",
+        "title": "Evolutionary Population Genetics, Clonal Dynamics & Quantitative Immunology",
+        "focus": "Mutational fitness landscapes, Lotka-Volterra clonal competition, antigen-receptor affinity maturation, CRISPR/epigenetic editing efficiency, and viral/immune escape kinetics.",
     },
     {
-        "name": "ReactionKineticsMolecularDesign",
-        "title": "Chemical Kinetics, Molecular Structure & Surface Catalysis",
-        "focus": "Transition-state free energy barriers, covalent/non-covalent molecular graphs, reaction-diffusion kinetics, chemical potential, solubility, and selectivity/metabolic stability.",
+        "name": "CellularMetabolismBioenergetics",
+        "title": "Cellular Metabolism, Stoichiometric Flux Balance & Bioenergetics",
+        "focus": "Metabolic flux balance analysis (FBA), Michaelis-Menten enzyme saturation, ATP/NADH redox potentials, transmembrane electrochemical gradients, and organelle transport.",
     },
     {
-        "name": "NonlinearDynamicsControl",
-        "title": "Nonlinear Dynamical Systems, Coupled ODEs & Feedback Control",
-        "focus": "State-space differential equations, Jacobian eigenvalue stability, Lyapunov functions, bifurcation thresholds, compartmental kinetics, and optimal closed-loop control.",
+        "name": "ContinuumFluidAerothermodynamics",
+        "title": "Continuum Fluid Mechanics, Aerothermodynamics & Convective Transport",
+        "focus": "Navier-Stokes momentum conservation, compressible hypersonic shock layers, boundary-layer advection-diffusion PDEs, Nusselt/Peclet heat transfer, and hydraulic pressure drop.",
     },
     {
-        "name": "MathematicalTopologyOptimization",
-        "title": "Applied Mathematics, Variational Calculus & Constrained Optimization",
-        "focus": "Karush-Kuhn-Tucker (KKT) multipliers, Pareto frontier geometry, spectral graph bounds, conservation invariants, and numerical PDE/ODE stiffness constraints.",
+        "name": "ElectrodynamicsMagnetohydrodynamics",
+        "title": "Electrodynamics, Magnetohydrodynamics (MHD) & High-Field Plasma Physics",
+        "focus": "Maxwell's equations, Lorentz force coupling (J x B), Hartmann/Stuart MHD duct scaling, Saha ionization conductivity, scrape-off-layer plasma detachment, and superconducting fields.",
     },
     {
-        "name": "InformationSignalTheory",
-        "title": "Information Theory, Stochastic Estimation & Signal Processing",
-        "focus": "Shannon channel capacity, Cramer-Rao lower bounds, Fisher information matrices, signal-to-noise thermal floors, Kalman filtering, and variational free energy.",
+        "name": "ThermodynamicsExergyPhaseChange",
+        "title": "Non-Equilibrium Thermodynamics, Exergy Budgets & Phase-Change Heat Transfer",
+        "focus": "First and Second Law entropy production, Carnot/Brayton cycle limits, transpiration/multi-Coolant heat extraction, radiative transfer, and boiling/freezing margins.",
     },
     {
-        "name": "DistributedSystemsArchitecture",
-        "title": "Computational Systems, Hardware Microarchitecture & Concurrency",
-        "focus": "Memory-hierarchy bandwidth ceilings, lock-free concurrency, consensus fault tolerance, queueing tail-latency bounds, and algorithmic time/space complexity.",
+        "name": "SolidMechanicsThermoElasticity",
+        "title": "Solid Mechanics, Thermo-Elastic Stress & Structural Creep/Fracture",
+        "focus": "Cauchy stress-strain tensors, ASME primary membrane (S_m) and secondary thermo-elastic (3*S_m) stress bounds, thermal creep rupture, fracture toughness, and micro-vibration isolation.",
     },
     {
-        "name": "SystemsBiologyHomeostasis",
-        "title": "Quantitative Systems Biology, Physiological Transport & Homeostasis",
-        "focus": "Receptor-ligand binding kinetics, intracellular signaling cascades, membrane permeability barriers, multi-compartmental clearance, and off-target toxicity margins.",
+        "name": "NuclearParticleRadiationPhysics",
+        "title": "Nuclear Physics, Neutron Transport & Radiation Damage",
+        "focus": "14.1 MeV neutron attenuation, volumetric nuclear heating, Tritium Breeding Ratio (TBR), displacement-per-atom (dpa) lattice damage, and irradiated DBTT embrittlement.",
     },
     {
-        "name": "EmpiricalFalsificationFailureModes",
-        "title": "Experimental Falsification, Boundary Stress Testing & Failure Physics",
-        "focus": "Coupled failure modes where optimizing one parameter breaks another, parasitic loss blowup, degenerate edge cases, and quantitative falsification experiments.",
+        "name": "MaterialsCorrosionDiffusionBarriers",
+        "title": "Materials Degradation, Liquid-Metal/Salt Corrosion & Ceramic Barriers",
+        "focus": "Dissolution corrosion kinetics at liquid-metal/alloy interfaces, electrically/thermally insulating Flow Channel Inserts (SiC/AlN/Er2O3), oxidation, and grain-boundary diffusion.",
+    },
+    {
+        "name": "QuantumPhysicsCoherentDynamics",
+        "title": "Quantum Mechanics, Decoherence Kinetics & Quantum Metrology",
+        "focus": "Lindblad master equations, spin/qubit relaxation and dephasing times (T1, T2*), shot-noise/squeezing limits, superconducting nanowire/Josephson physics, and fidelity thresholds.",
+    },
+    {
+        "name": "SemiconductorDeviceCryoCMOS",
+        "title": "Semiconductor Device Physics, Sub-Threshold CMOS & Interconnects",
+        "focus": "Dynamic capacitive switching power (alpha*C*V^2*f), sub-threshold leakage, Johnson-Nyquist thermal noise floors, microwave EM crosstalk, and monolithic 3D thermal resistance.",
+    },
+    {
+        "name": "ChemicalKineticsElectrochemistry",
+        "title": "Chemical Reaction Kinetics, Catalysis & Electrochemical Transport",
+        "focus": "Butler-Volmer electrode kinetics, Arrhenius activation barriers, Nernst-Planck ion diffusion, overpotential losses, and heterogeneous catalyst turnover frequency.",
+    },
+    {
+        "name": "DistributedConsensusFaultTolerance",
+        "title": "Distributed Consensus Protocols, Quorum Replication & Fault Tolerance",
+        "focus": "Byzantine and crash-fault quorum intersection, linearizability, state-machine replication message complexity, view-change latency bounds, and partition recovery.",
+    },
+    {
+        "name": "SystemsMemoryHardwareKernel",
+        "title": "Low-Level Memory Hierarchy, Kernel Bypass & GPU/NUMA Scheduling",
+        "focus": "Cache-line alignment, lock-free ring buffers, zero-copy DMA/io_uring descriptors, SIMD/GPU warp occupancy, and p999 tail-latency bounds.",
+    },
+    {
+        "name": "QueueingBackpressureControl",
+        "title": "Queueing Theory, Nonlinear Feedback Control & Lyapunov Stability",
+        "focus": "Little's Law, M/G/1 tail latency explosion, Lyapunov drift-plus-penalty admission control, state-space eigenvalue stability, and closed-loop disturbance rejection.",
+    },
+    {
+        "name": "MathematicalOptimizationManifolds",
+        "title": "Constrained Mathematical Optimization, KKT Multipliers & Pareto Topology",
+        "focus": "Karush-Kuhn-Tucker (KKT) saddle points, non-convex Pareto frontiers, Determinantal Point Processes, spectral bounds, and coupled differential-algebraic stiffness.",
+    },
+    {
+        "name": "EmpiricalFalsificationFailurePhysics",
+        "title": "Experimental Falsification, Coupled Failure Modes & Stress Testing",
+        "focus": "Cross-domain failure traps where optimizing one variable breaks a coupled conservation law, parasitic power/toxicity blowup, and quantitative falsification protocols.",
     },
 ]
 
@@ -169,7 +209,7 @@ def _select_dpp_orthogonal_domains(
     c_emb = emb_all[1:]
 
     rel_scores = torch.clamp((c_emb @ q_emb.t()).squeeze(-1), -1.0, 1.0)
-    top_pool_k = min(n_cand, max(k_target + 3, int(k_target * 2)))
+    top_pool_k = min(n_cand, max(k_target + 2, int(k_target * 1.5)))
     top_rel_indices = torch.topk(rel_scores, k=top_pool_k).indices.tolist()
 
     quality = torch.exp(4.5 * rel_scores)
