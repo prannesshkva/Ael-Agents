@@ -373,6 +373,11 @@ def tool_cortical_rdm_and_jacobian_gate(args: Dict[str, Any]) -> Dict[str, Any]:
             ),
             "gated_specialist_payloads": gated_context_blocks,
         },
+        "next_step": (
+            "Now call 'Ael-Agents_dream_rsi_consolidate' with your synthesized 'wake_solution' to run 15 epochs "
+            "of Offline Dream-RSI free-energy minimization (F_dream <= F_wake). If designing a molecule or PK/PD "
+            "regimen, also call 'Ael-Agents_verify_molecule_pkpd' to deterministically verify the SMILES and 2-compartment ODEs."
+        ),
     }
 
 
@@ -476,6 +481,11 @@ def tool_dream_rsi_consolidate(args: Dict[str, Any]) -> Dict[str, Any]:
         "updated_jacobian_sensitivities": sn_post["jacobian_sensitivities"],
         "updated_working_memory_domains": sn_post["working_memory_domains"],
         "dream_recombination_bridge": unexplored_bridge,
+        "next_step": (
+            "If this task involves a chemical SMILES candidate or PK/PD dosing regimen, call "
+            "'Ael-Agents_verify_molecule_pkpd' now so RDKit and SciPy RK45 deterministically validate the "
+            "molecule (MW < 500 Da, QED, Lipinski) and 24h 2-compartment target occupancy (>90% trough)."
+        ),
     }
 
 
@@ -489,6 +499,9 @@ def tool_verify_molecule_pkpd(args: Dict[str, Any]) -> Dict[str, Any]:
     if not smiles:
         raise ValueError("'smiles' must be a non-empty SMILES chemical string.")
 
+    rdkit_metrics = evaluate_rdkit_smiles(smiles)
+    computed_mw = float(rdkit_metrics.get("mw") or 400.0)
+
     pk_params = {
         "dose_mg": float(args.get("dose_mg", 150.0)),
         "cl_l_h": float(args.get("cl_l_h", 8.5)),
@@ -498,24 +511,34 @@ def tool_verify_molecule_pkpd(args: Dict[str, Any]) -> Dict[str, Any]:
         "vp_l": float(args.get("vp_l", 45.0)),
         "kd_nm": float(args.get("kd_nm", 0.02)),
         "ic50_nm": float(args.get("ic50_nm", 0.02)),
+        "mw_da": float(args.get("mw_da", computed_mw)),
+        "f_bioavail": float(args.get("f_bioavail", 0.70)),
+        "fu_plasma": float(args.get("fu_plasma", 0.05)),
+        "kp_uu_brain": float(args.get("kp_uu_brain", 0.50)),
     }
     dosing_interval_h = float(args.get("dosing_interval_h", 12.0))
     t_end_h = float(args.get("t_end_h", 24.0))
 
-    rdkit_metrics = evaluate_rdkit_smiles(smiles)
     pkpd_metrics = simulate_two_compartment_pkpd(
         pk_params=pk_params,
         dosing_interval_h=dosing_interval_h,
         t_end_h=t_end_h,
     )
 
-    return {
+    result: Dict[str, Any] = {
         "framework": "Ael-Agents",
         "smiles": smiles,
         "rdkit_validation": rdkit_metrics,
         "pk_parameters_used": pk_params,
         "scipy_rk45_two_compartment_pkpd": pkpd_metrics,
     }
+    if not GLOBAL_MCP_STATE.last_hypotheses:
+        result["cortical_pipeline_status"] = (
+            "Verification completed. To obtain multi-disciplinary cortical synthesis, execute "
+            "'Ael-Agents_propose_specialist_roster' -> 'Ael-Agents_cortical_rdm_and_jacobian_gate' "
+            "-> 'Ael-Agents_dream_rsi_consolidate'."
+        )
+    return result
 
 
 def tool_run_autonomous_pipeline(args: Dict[str, Any]) -> Dict[str, Any]:
@@ -552,8 +575,9 @@ MCP_TOOLS_SPEC: List[Dict[str, Any]] = [
         "title": "Ael-Agents: Propose Specialist Roster",
         "annotations": {"title": "Ael-Agents: Propose Specialist Roster"},
         "description": (
-            "Ael-Agents Step 1: Segregate any scientific, engineering, software, or quantitative problem into N "
-            "mutually orthogonal domain specialists (w_1 ... w_N) for the Ael-Agents cortical hierarchy."
+            "Ael-Agents Step 1 (PRIMARY ENTRY POINT): Segregate any scientific, engineering, software, or quantitative problem into N "
+            "mutually orthogonal domain specialists (w_1 ... w_N) for the Ael-Agents cortical hierarchy. Call this FIRST when solving "
+            "any complex problem with Ael-Agents."
         ),
         "inputSchema": {
             "type": "object",
@@ -639,7 +663,7 @@ MCP_TOOLS_SPEC: List[Dict[str, Any]] = [
                     "default": 15,
                 },
             },
-            "required": ["problem", "hypotheses", "wake_solution"],
+            "required": ["problem", "wake_solution"],
         },
     },
     {
@@ -649,7 +673,7 @@ MCP_TOOLS_SPEC: List[Dict[str, Any]] = [
         "description": (
             "Ael-Agents Step 4: Deterministic RDKit chemical compiler (valence, MW, LogP, TPSA, Lipinski Rule of 5, "
             "QED druglikeness) coupled with SciPy RK45 2-compartment pharmacokinetic/pharmacodynamic ODE "
-            "integration (steady-state trough target occupancy, Peak-to-Trough ratio, 24h suppression)."
+            "integration (steady-state trough target occupancy, Peak-to-Trough ratio, 24h suppression, and 14-day steady-state CNS/CSF audit)."
         ),
         "inputSchema": {
             "type": "object",
@@ -673,6 +697,21 @@ MCP_TOOLS_SPEC: List[Dict[str, Any]] = [
                     "description": "Central compartment volume Vc in L (default: 35.0).",
                     "default": 35.0,
                 },
+                "ka_h_inv": {
+                    "type": "number",
+                    "description": "Absorption rate ka in h^-1 (default: 1.5).",
+                    "default": 1.5,
+                },
+                "q_l_h": {
+                    "type": "number",
+                    "description": "Intercompartmental clearance Q in L/h (default: 12.0).",
+                    "default": 12.0,
+                },
+                "vp_l": {
+                    "type": "number",
+                    "description": "Peripheral compartment volume Vp in L (default: 45.0).",
+                    "default": 45.0,
+                },
                 "kd_nm": {
                     "type": "number",
                     "description": "Dissociation constant Kd in nM (default: 0.02).",
@@ -682,6 +721,21 @@ MCP_TOOLS_SPEC: List[Dict[str, Any]] = [
                     "type": "number",
                     "description": "Half-maximal inhibitory concentration IC50 in nM (default: 0.02).",
                     "default": 0.02,
+                },
+                "f_bioavail": {
+                    "type": "number",
+                    "description": "Oral bioavailability fraction F (default: 0.70).",
+                    "default": 0.70,
+                },
+                "fu_plasma": {
+                    "type": "number",
+                    "description": "Unbound plasma fraction fu (default: 0.05).",
+                    "default": 0.05,
+                },
+                "kp_uu_brain": {
+                    "type": "number",
+                    "description": "Unbound brain-to-plasma partition coefficient Kp,uu (default: 0.50).",
+                    "default": 0.50,
                 },
             },
             "required": ["smiles"],

@@ -6,13 +6,14 @@ import numpy as np
 import scipy.integrate
 try:
     from rdkit import Chem
-    from rdkit.Chem import Descriptors, Lipinski, QED
+    from rdkit.Chem import Descriptors, Lipinski, QED, rdMolDescriptors
     RDKIT_AVAILABLE = True
 except ImportError:
     Chem = None
     Descriptors = None
     Lipinski = None
     QED = None
+    rdMolDescriptors = None
     RDKIT_AVAILABLE = False
 from rich.console import Console
 from rich.panel import Panel
@@ -74,11 +75,13 @@ VERIFIED_KRAS_G12D_CANDIDATES = {
 }
 
 def evaluate_rdkit_smiles(smiles: Optional[str]) -> Dict[str, Any]:
-    if not smiles:
+    if not smiles or not RDKIT_AVAILABLE or Chem is None:
         return {
             "valid_smiles": False,
             "smiles": None,
+            "formula": None,
             "mw": None,
+            "exact_mass": None,
             "logp": None,
             "hbd": None,
             "hba": None,
@@ -86,30 +89,18 @@ def evaluate_rdkit_smiles(smiles: Optional[str]) -> Dict[str, Any]:
             "tpsa": None,
             "lipinski_violations": 4,
             "lipinski_pass": False,
+            "cns_bbb_optimal": False,
             "qed_druglikeness": 0.0,
             "heavy_atom_count": 0,
-        }
-    if not RDKIT_AVAILABLE or Chem is None:
-        return {
-            "valid_smiles": bool(smiles and len(smiles) > 5),
-            "smiles": smiles,
-            "mw": 357.34,
-            "logp": 2.85,
-            "hbd": 2,
-            "hba": 5,
-            "rotatable_bonds": 5,
-            "tpsa": 72.4,
-            "lipinski_violations": 0,
-            "lipinski_pass": True,
-            "qed_druglikeness": 0.7412,
-            "heavy_atom_count": 25,
         }
     mol = Chem.MolFromSmiles(smiles)
     if mol is None:
         return {
             "valid_smiles": False,
             "smiles": None,
+            "formula": None,
             "mw": None,
+            "exact_mass": None,
             "logp": None,
             "hbd": None,
             "hba": None,
@@ -117,10 +108,13 @@ def evaluate_rdkit_smiles(smiles: Optional[str]) -> Dict[str, Any]:
             "tpsa": None,
             "lipinski_violations": 4,
             "lipinski_pass": False,
+            "cns_bbb_optimal": False,
             "qed_druglikeness": 0.0,
             "heavy_atom_count": 0,
         }
     mw = float(Descriptors.MolWt(mol))
+    exact_mass = float(Descriptors.ExactMolWt(mol))
+    formula = str(rdMolDescriptors.CalcMolFormula(mol)) if rdMolDescriptors is not None else ""
     logp = float(Descriptors.MolLogP(mol))
     hbd = int(Lipinski.NumHDonors(mol))
     hba = int(Lipinski.NumHAcceptors(mol))
@@ -130,10 +124,13 @@ def evaluate_rdkit_smiles(smiles: Optional[str]) -> Dict[str, Any]:
     heavy_atoms = int(mol.GetNumHeavyAtoms())
 
     violations = int(mw > 500.0) + int(logp > 5.0) + int(hbd > 5) + int(hba > 10)
+    cns_optimal = bool(mw <= 450.0 and 1.5 <= logp <= 4.2 and tpsa <= 90.0 and hbd <= 2)
     return {
         "valid_smiles": True,
         "smiles": Chem.MolToSmiles(mol),
+        "formula": formula,
         "mw": round(mw, 2),
+        "exact_mass": round(exact_mass, 4),
         "logp": round(logp, 2),
         "hbd": hbd,
         "hba": hba,
@@ -141,6 +138,7 @@ def evaluate_rdkit_smiles(smiles: Optional[str]) -> Dict[str, Any]:
         "tpsa": round(tpsa, 2),
         "lipinski_violations": violations,
         "lipinski_pass": bool(violations <= 1),
+        "cns_bbb_optimal": cns_optimal,
         "qed_druglikeness": round(qed_score, 4),
         "heavy_atom_count": heavy_atoms,
     }
@@ -158,6 +156,10 @@ def simulate_two_compartment_pkpd(
     vp = max(5.0, pk_params.get("vp_l", 60.0))
     kd_nm = max(0.001, pk_params.get("kd_nm", 35.0))
     ic50_nm = max(0.001, pk_params.get("ic50_nm", 25.0))
+    mw_da = max(100.0, pk_params.get("mw_da", 400.0))
+    f_bio = max(0.05, min(1.0, pk_params.get("f_bioavail", 1.0)))
+    fu_plasma = max(0.001, min(1.0, pk_params.get("fu_plasma", 0.08)))
+    kp_uu_brain = max(0.01, min(2.0, pk_params.get("kp_uu_brain", 0.65)))
 
     k10 = cl / vc
     k12 = q / vc
@@ -170,7 +172,7 @@ def simulate_two_compartment_pkpd(
         c_plasma_mg_l = max(0.0, ac / vc)
         c_plasma_nm = c_plasma_mg_l * 1000.0
         dag = -ka * ag
-        dac = ka * ag - (k10 + k12) * ac + k21 * ap
+        dac = f_bio * ka * ag - (k10 + k12) * ac + k21 * ap
         dap = k12 * ac - k21 * ap
         hill_inhibition = c_plasma_nm / (c_plasma_nm + ic50_nm)
         dp = kin * (1.0 - hill_inhibition) - kout * p
@@ -211,6 +213,27 @@ def simulate_two_compartment_pkpd(
     min_to = float(np.min(target_occupancy[len(target_occupancy) // 2 :]))
     peak_trough_ratio = (c_max / max(1e-4, c_min)) if c_min > 0 else 999.0
 
+    y_ss = np.array([0.0, 0.0, 0.0, 1.0])
+    n_ss_doses = 28
+    ss_last_c = []
+    for d_idx in range(n_ss_doses):
+        y_ss[0] += dose
+        t_span = (d_idx * dosing_interval_h, (d_idx + 1) * dosing_interval_h)
+        t_pts = np.linspace(t_span[0], t_span[1], 49)
+        sol_ss = scipy.integrate.solve_ivp(ode_system, t_span, y_ss, t_eval=t_pts, method="RK45")
+        y_ss = sol_ss.y[:, -1].copy()
+        if d_idx >= n_ss_doses - 2:
+            ss_last_c.extend(list(sol_ss.y[1] / vc))
+
+    ss_arr = np.array(ss_last_c) if ss_last_c else c_arr
+    ss_cmax_mg_l = float(np.max(ss_arr))
+    ss_cmin_mg_l = float(np.min(ss_arr[ss_arr > 0])) if np.any(ss_arr > 0) else c_min
+    ss_cmin_total_nm = (ss_cmin_mg_l * 1e6) / mw_da
+    ss_cmin_free_plasma_nm = ss_cmin_total_nm * fu_plasma
+    ss_cmin_free_cns_nm = ss_cmin_free_plasma_nm * kp_uu_brain
+    ss_free_plasma_trough_occ = (ss_cmin_free_plasma_nm / (ss_cmin_free_plasma_nm + kd_nm)) * 100.0
+    ss_free_cns_trough_occ = (ss_cmin_free_cns_nm / (ss_cmin_free_cns_nm + kd_nm)) * 100.0
+
     return {
         "stable_ode": True,
         "c_max_mg_l": round(c_max, 3),
@@ -219,6 +242,22 @@ def simulate_two_compartment_pkpd(
         "mean_target_occupancy_pct": round(mean_to * 100.0, 1),
         "steady_state_trough_occupancy_pct": round(min_to * 100.0, 1),
         "final_pathway_biomarker_suppression_pct": round((1.0 - float(biomarker[-1])) * 100.0, 1),
+        "steady_state_14d_and_cns_audit": {
+            "doses_simulated": n_ss_doses,
+            "duration_days": round((n_ss_doses * dosing_interval_h) / 24.0, 1),
+            "mw_da_used": round(mw_da, 2),
+            "f_bioavail": f_bio,
+            "fu_plasma": fu_plasma,
+            "kp_uu_brain": kp_uu_brain,
+            "ss_c_max_mg_l": round(ss_cmax_mg_l, 3),
+            "ss_c_min_trough_mg_l": round(ss_cmin_mg_l, 3),
+            "ss_peak_to_trough_ratio": round(ss_cmax_mg_l / max(1e-5, ss_cmin_mg_l), 2),
+            "ss_trough_total_plasma_nm": round(ss_cmin_total_nm, 2),
+            "ss_trough_free_plasma_nm": round(ss_cmin_free_plasma_nm, 2),
+            "ss_trough_free_cns_csf_nm": round(ss_cmin_free_cns_nm, 2),
+            "ss_free_plasma_trough_occupancy_pct": round(ss_free_plasma_trough_occ, 1),
+            "ss_free_cns_csf_trough_occupancy_pct": round(ss_free_cns_trough_occ, 1),
+        },
     }
 
 def evaluate_kras_g12d_deterministic() -> Dict[str, Any]:
