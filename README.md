@@ -636,7 +636,7 @@ Repository Structure
 Ael-Agents/
 ├── assets/
 │   ├── logo.png                                    # Official Ael-Agents square emblem (1024x1024)
-│   └── logo_banner.png                             # Official Ael-Agents README banner (864x432)
+│   └── A.jpg                                       # Official Ael-Agents Logo & MCP Icon
 ├── agents/
 │   ├── base_deep_agent.py                          # Base specialist agent with 1-to-1 PyTorch scalar weight w_i
 │   └── domain_specialists.py                       # 4-piece orthogonal specialist builders
