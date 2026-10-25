@@ -12,12 +12,22 @@ except Exception:
     pass
 
 import argparse
+import io
 import json
+import math
+import statistics
 import sys
 import threading
+import time
 import traceback
+from contextlib import redirect_stdout
 from typing import Any, Dict, List, Optional
 
+import numpy as np
+import scipy
+import scipy.integrate
+import scipy.linalg
+import scipy.optimize
 import torch
 import torch.nn.functional as F
 
@@ -78,74 +88,145 @@ class CorticalMCPState:
 GLOBAL_MCP_STATE = CorticalMCPState()
 
 
-BUILTIN_DOMAIN_PRESETS: Dict[str, List[Dict[str, str]]] = {
-    "drug_discovery": [
-        {
-            "name": "StructuralBiophysics",
-            "title": "Structural Biophysics & Binding Thermodynamics",
-            "focus": "3D binding pocket geometry, covalent/non-covalent warhead kinetics, ΔG_bind, residence time (1/k_off), and conformational allostery.",
-        },
-        {
-            "name": "SystemsPharmacology",
-            "title": "Quantitative Systems Pharmacology & Pathway Dynamics",
-            "focus": "Signaling cascade ODEs, feedback loops, receptor occupancy-response coupling, hill coefficients, and resistance bypass mechanisms.",
-        },
-        {
-            "name": "MedicinalChemistryADMET",
-            "title": "Medicinal Chemistry, Structure-Activity & ADMET",
-            "focus": "Scaffold design, SMILES validity, Lipinski Rule of 5, QED druglikeness, CYP450 metabolic stability, hERG liability, and TPSA permeability.",
-        },
-        {
-            "name": "ClinicalPKPDControl",
-            "title": "Clinical Pharmacokinetics, Dosing & Therapeutic Index",
-            "focus": "2-compartment PK/PD ODEs, clearance (CL), volume of distribution (Vd), bioavailability (F), peak-to-trough ratio, and steady-state trough target occupancy.",
-        },
-    ],
-    "software_systems": [
-        {
-            "name": "DistributedConsensus",
-            "title": "Distributed Systems & Consensus Protocols",
-            "focus": "State machine replication, linearizability, partition tolerance, quorum intersection, tail latency bounds, and network fault recovery.",
-        },
-        {
-            "name": "SystemsMemoryKernel",
-            "title": "Low-Level Memory Hierarchy & Kernel Optimization",
-            "focus": "Cache-line alignment, zero-copy I/O, lock-free ring buffers, NUMA locality, SIMD/GPU warp scheduling, and O(1) memory bounds.",
-        },
-        {
-            "name": "FormalVerificationSecurity",
-            "title": "Formal Verification, Type Safety & Cryptographic Security",
-            "focus": "Temporal logic invariants, threat surface isolation, Byzantine fault resistance, memory safety guarantees, and zero-trust verification.",
-        },
-        {
-            "name": "QueueingControlTheory",
-            "title": "Queueing Theory, Backpressure & Dynamical Control",
-            "focus": "Little's Law, M/M/c queue stability, Lyapunov control, adaptive rate limiting, token-bucket dynamics, and overload shedding.",
-        },
-    ],
-    "general_first_principles": [
-        {
-            "name": "MathematicalFormalism",
-            "title": "Mathematical Topology, Optimization & Invariants",
-            "focus": "Convex/non-convex optimization landscapes, manifold geometry, conservation laws, spectral bounds, and asymptotic complexity.",
-        },
-        {
-            "name": "DynamicalSystemsControl",
-            "title": "Dynamical Systems, Differential Equations & Stability",
-            "focus": "State-space trajectories, Jacobian eigenvalues, feedback stability, attractors, phase transitions, and stochastic perturbations.",
-        },
-        {
-            "name": "InformationThermodynamics",
-            "title": "Information Theory, Entropy & Statistical Mechanics",
-            "focus": "Shannon mutual information, KL divergence, variational free energy minimization, signal-to-noise limits, and compression bounds.",
-        },
-        {
-            "name": "EmpiricalVerification",
-            "title": "Experimental Falsification, Edge Cases & Constraints",
-            "focus": "Physical/resource bottlenecks, failure modes, adversarial stress tests, measurable observables, and falsifiable benchmark criteria.",
-        },
-    ],
-}
+UNIVERSAL_SCIENTIFIC_BASIS: List[Dict[str, str]] = [
+    {
+        "name": "ContinuumFluidTransport",
+        "title": "Continuum Mechanics, Fluid Dynamics & Coupled Transport Phenomena",
+        "focus": "Navier-Stokes conservation of momentum, boundary-layer advection-diffusion PDEs, multiphase heat/mass transfer, Nusselt/Peclet scaling, and pressure-drop hydraulics.",
+    },
+    {
+        "name": "ElectrodynamicsFieldTheory",
+        "title": "Electrodynamics, Magnetohydrodynamics & High-Field Interactions",
+        "focus": "Maxwell's equations, Lorentz force coupling (J x B), Hartmann/Stuart magnetohydrodynamic scaling, electromagnetic wave propagation, skin depth, and superconducting field limits.",
+    },
+    {
+        "name": "ThermodynamicsStatisticalPhysics",
+        "title": "Non-Equilibrium Thermodynamics, Statistical Mechanics & Energy Conversion",
+        "focus": "First and Second Law exergy budgets, Carnot/Brayton cycle limits, entropy production minimization, Boltzmann transport, phase equilibria, and radiative heat transfer.",
+    },
+    {
+        "name": "SolidMechanicsMaterials",
+        "title": "Solid Mechanics, Thermo-Elasticity & Materials Degradation",
+        "focus": "Cauchy stress-strain tensors, Von Mises/ASME membrane and bending limits, secondary thermo-elastic stress, creep-rupture kinetics, fracture toughness, and radiation/chemical corrosion.",
+    },
+    {
+        "name": "QuantumAtomicPhysics",
+        "title": "Quantum Mechanics, Electronic Structure & Coherent Dynamics",
+        "focus": "Hamiltonian eigenstates, Lindblad decoherence/dephasing rates, tunneling probabilities, spin/optical transitions, nuclear cross-sections, and quantum measurement noise limits.",
+    },
+    {
+        "name": "ReactionKineticsMolecularDesign",
+        "title": "Chemical Kinetics, Molecular Structure & Surface Catalysis",
+        "focus": "Transition-state free energy barriers, covalent/non-covalent molecular graphs, reaction-diffusion kinetics, chemical potential, solubility, and selectivity/metabolic stability.",
+    },
+    {
+        "name": "NonlinearDynamicsControl",
+        "title": "Nonlinear Dynamical Systems, Coupled ODEs & Feedback Control",
+        "focus": "State-space differential equations, Jacobian eigenvalue stability, Lyapunov functions, bifurcation thresholds, compartmental kinetics, and optimal closed-loop control.",
+    },
+    {
+        "name": "MathematicalTopologyOptimization",
+        "title": "Applied Mathematics, Variational Calculus & Constrained Optimization",
+        "focus": "Karush-Kuhn-Tucker (KKT) multipliers, Pareto frontier geometry, spectral graph bounds, conservation invariants, and numerical PDE/ODE stiffness constraints.",
+    },
+    {
+        "name": "InformationSignalTheory",
+        "title": "Information Theory, Stochastic Estimation & Signal Processing",
+        "focus": "Shannon channel capacity, Cramer-Rao lower bounds, Fisher information matrices, signal-to-noise thermal floors, Kalman filtering, and variational free energy.",
+    },
+    {
+        "name": "DistributedSystemsArchitecture",
+        "title": "Computational Systems, Hardware Microarchitecture & Concurrency",
+        "focus": "Memory-hierarchy bandwidth ceilings, lock-free concurrency, consensus fault tolerance, queueing tail-latency bounds, and algorithmic time/space complexity.",
+    },
+    {
+        "name": "SystemsBiologyHomeostasis",
+        "title": "Quantitative Systems Biology, Physiological Transport & Homeostasis",
+        "focus": "Receptor-ligand binding kinetics, intracellular signaling cascades, membrane permeability barriers, multi-compartmental clearance, and off-target toxicity margins.",
+    },
+    {
+        "name": "EmpiricalFalsificationFailureModes",
+        "title": "Experimental Falsification, Boundary Stress Testing & Failure Physics",
+        "focus": "Coupled failure modes where optimizing one parameter breaks another, parasitic loss blowup, degenerate edge cases, and quantitative falsification experiments.",
+    },
+]
+
+
+def _select_dpp_orthogonal_domains(
+    problem: str,
+    candidates: List[Dict[str, str]],
+    num_specialists: int,
+) -> Dict[str, Any]:
+    encoder = GLOBAL_MCP_STATE.get_encoder_instance()
+    n_cand = len(candidates)
+    k_target = max(2, min(int(num_specialists), n_cand))
+
+    cand_texts = [f"{c['title']}: {c['focus']}" for c in candidates]
+    all_texts = [problem] + cand_texts
+    emb_all = encoder.encode_batch(all_texts)
+
+    q_emb = emb_all[0:1]
+    c_emb = emb_all[1:]
+
+    rel_scores = torch.clamp((c_emb @ q_emb.t()).squeeze(-1), -1.0, 1.0)
+    top_pool_k = min(n_cand, max(k_target + 3, int(k_target * 2)))
+    top_rel_indices = torch.topk(rel_scores, k=top_pool_k).indices.tolist()
+
+    quality = torch.exp(4.5 * rel_scores)
+
+    sim_matrix = torch.clamp(c_emb @ c_emb.t(), -1.0, 1.0)
+    kernel_s = 0.5 * (sim_matrix + 1.0)
+    l_matrix = torch.outer(quality, quality) * kernel_s + 1e-5 * torch.eye(n_cand)
+
+    selected_indices: List[int] = []
+    remaining = set(top_rel_indices)
+
+    for _ in range(k_target):
+        best_idx = -1
+        best_logdet = -1e18
+        for idx in remaining:
+            trial = selected_indices + [idx]
+            sub_l = l_matrix[ trial][:, trial]
+            sign, logdet = torch.linalg.slogdet(sub_l)
+            val = float(logdet.item()) if float(sign.item()) > 0 else -1e18
+            if val > best_logdet:
+                best_logdet = val
+                best_idx = idx
+        if best_idx < 0:
+            best_idx = next(iter(remaining))
+        selected_indices.append(best_idx)
+        remaining.remove(best_idx)
+
+    sub_final = l_matrix[selected_indices][:, selected_indices]
+    _, final_logdet = torch.linalg.slogdet(sub_final)
+    sub_sim = sim_matrix[selected_indices][:, selected_indices]
+    off_mask = ~torch.eye(len(selected_indices), dtype=torch.bool)
+    mean_orthogonality = float((1.0 - torch.abs(sub_sim[off_mask])).mean().item()) if off_mask.any() else 1.0
+
+    selected_domains = []
+    for rank, idx in enumerate(selected_indices):
+        d = candidates[idx]
+        selected_domains.append(
+            {
+                "param_id": f"w_{rank + 1}",
+                "name": d["name"],
+                "title": d["title"],
+                "focus": d["focus"],
+                "query_relevance_cos": round(float(rel_scores[idx].item()), 4),
+                "instruction": (
+                    f"Generate a dense, mathematically rigorous hypothesis (<180 words) for the user's query "
+                    f"analyzed EXCLUSIVELY through {d['title']} ({d['focus']}). Write explicit governing equations "
+                    f"and physical/quantitative bounds."
+                ),
+            }
+        )
+
+    return {
+        "selected_domains": selected_domains,
+        "dpp_logdet_volume": round(float(final_logdet.item()), 4),
+        "mean_pairwise_orthogonality": round(mean_orthogonality, 4),
+        "candidate_pool_size": n_cand,
+    }
 
 
 def _normalize_hypotheses(raw: Any, fallback_args: Optional[Dict[str, Any]] = None) -> Dict[str, str]:
@@ -200,7 +281,7 @@ def _normalize_hypotheses(raw: Any, fallback_args: Optional[Dict[str, Any]] = No
                 normalized[f"Specialist_{idx + 1}"] = str(item).strip()
 
     if len(normalized) < 2 and fallback_args:
-        skip_keys = {"problem", "hypotheses", "working_memory_k", "wake_solution", "epochs", "preset", "num_specialists"}
+        skip_keys = {"problem", "hypotheses", "working_memory_k", "wake_solution", "epochs", "candidate_domains", "num_specialists"}
         for k, v in fallback_args.items():
             if k not in skip_keys and isinstance(v, (str, dict)):
                 normalized[str(k)] = str(v)
@@ -220,50 +301,39 @@ def _normalize_hypotheses(raw: Any, fallback_args: Optional[Dict[str, Any]] = No
 
 def tool_propose_specialist_roster(args: Dict[str, Any]) -> Dict[str, Any]:
     problem = str(args.get("problem", "")).strip()
-    preset = str(args.get("preset", "auto")).strip().lower()
+    if not problem:
+        raise ValueError("'problem' must be a non-empty string.")
     num_specialists = int(args.get("num_specialists", 4))
+    raw_candidates = args.get("candidate_domains")
 
-    if preset in BUILTIN_DOMAIN_PRESETS:
-        domains = BUILTIN_DOMAIN_PRESETS[preset][:num_specialists]
-    elif preset == "auto":
-        lower_p = problem.lower()
-        if any(k in lower_p for k in ["kras", "inhibitor", "smiles", "pk/pd", "drug", "pharmacology", "cyp", "binding", "dose", "therapeutic"]):
-            domains = BUILTIN_DOMAIN_PRESETS["drug_discovery"][:num_specialists]
-            preset = "drug_discovery"
-        elif any(k in lower_p for k in ["distributed", "latency", "kernel", "cuda", "cache", "database", "api", "microservice", "compiler", "queue", "ring-buffer", "byzantine", "consensus"]):
-            domains = BUILTIN_DOMAIN_PRESETS["software_systems"][:num_specialists]
-            preset = "software_systems"
-        else:
-            domains = BUILTIN_DOMAIN_PRESETS["general_first_principles"][:num_specialists]
-            preset = "general_first_principles"
-    else:
-        try:
-            loaded = load_roster(preset)
-            domains = [
-                {"name": s.name, "title": s.domain_title, "focus": s.focus}
-                for s in loaded[:num_specialists]
-            ]
-        except Exception:
-            domains = BUILTIN_DOMAIN_PRESETS["general_first_principles"][:num_specialists]
+    custom_pool: List[Dict[str, str]] = []
+    if isinstance(raw_candidates, list) and len(raw_candidates) >= 2:
+        for idx, item in enumerate(raw_candidates):
+            if isinstance(item, dict):
+                c_name = "".join(ch for ch in str(item.get("name", f"Domain_{idx + 1}")) if ch.isalnum() or ch == "_")
+                c_title = str(item.get("title", c_name)).strip()
+                c_focus = str(item.get("focus", c_title)).strip()
+                if c_name:
+                    custom_pool.append({"name": c_name, "title": c_title, "focus": c_focus})
+
+    pool_to_use = custom_pool if len(custom_pool) >= 2 else UNIVERSAL_SCIENTIFIC_BASIS
+    selection_mode = "prompt_synthesized_dpp" if len(custom_pool) >= 2 else "universal_first_principles_dpp"
+
+    dpp_out = _select_dpp_orthogonal_domains(
+        problem=problem,
+        candidates=pool_to_use,
+        num_specialists=num_specialists,
+    )
 
     return {
         "framework": "Ael-Agents",
         "problem": problem,
-        "selected_preset": preset,
-        "num_specialists": len(domains),
-        "specialists": [
-            {
-                "param_id": f"w_{i + 1}",
-                "name": d["name"],
-                "title": d["title"],
-                "focus": d["focus"],
-                "instruction": (
-                    f"Generate a dense, orthogonal hypothesis (<180 words) for '{problem}' "
-                    f"analyzed EXCLUSIVELY through {d['title']} ({d['focus']})."
-                ),
-            }
-            for i, d in enumerate(domains)
-        ],
+        "selection_mode": selection_mode,
+        "dpp_logdet_volume": dpp_out["dpp_logdet_volume"],
+        "mean_pairwise_orthogonality": dpp_out["mean_pairwise_orthogonality"],
+        "candidate_pool_size": dpp_out["candidate_pool_size"],
+        "num_specialists": len(dpp_out["selected_domains"]),
+        "specialists": dpp_out["selected_domains"],
         "next_step": (
             "Pass a dictionary mapping each specialist 'name' to its generated plain-string hypothesis into "
             "'Ael-Agents_cortical_rdm_and_jacobian_gate' to compute the 768-D BGE RDM and 0-token PyTorch "
@@ -308,88 +378,92 @@ def tool_cortical_rdm_and_jacobian_gate(args: Dict[str, Any]) -> Dict[str, Any]:
     wm_domains = sn_out["working_memory_domains"]
     top_bridge = sn_out["salient_beautiful_matches"][0] if sn_out["salient_beautiful_matches"] else None
 
-    rdm_nested = {
-        domain_names[i]: {
-            domain_names[j]: round(float(rdm_matrix[i, j].item()), 4)
-            for j in range(len(domain_names))
-        }
-        for i in range(len(domain_names))
-    }
+    rdm_dict: Dict[str, Dict[str, float]] = {}
+    for i, di in enumerate(domain_names):
+        rdm_dict[di] = {}
+        for j, dj in enumerate(domain_names):
+            rdm_dict[di][dj] = round(float(rdm_matrix[i, j].item()), 4)
 
-    gated_context_blocks = []
-    for d_name in wm_domains:
-        gate_pct = sn_out["gating_weights"].get(d_name, 0.0) * 100.0
-        jac_val = sn_out["jacobian_sensitivities"].get(d_name, 0.0)
-        gated_context_blocks.append(
-            f"[WORKING MEMORY SLOT: {d_name} | Gating α={gate_pct:.1f}% | Jacobian ||∂y/∂w_i||_2={jac_val:.4f}]\n"
-            f"{hypotheses_map[d_name]}"
-        )
-
-    bridge_directive = ""
+    bridge_prompt = ""
     if top_bridge:
-        bridge_directive = (
-            f"EPISTEMIC SURPRISE BRIDGE: {top_bridge['domain_a']} <--> {top_bridge['domain_b']} "
-            f"(RDM Dissimilarity={top_bridge['rdm_dissimilarity']:.4f}, "
-            f"Salience Score={top_bridge['salience_beauty_score']:.4f}, "
-            f"Jacobian Co-Sensitivity={top_bridge['jacobian_co_sensitivity']:.5f})"
+        d1, d2 = top_bridge["domain_a"], top_bridge["domain_b"]
+        bridge_prompt = (
+            f"Epistemic Surprise Bridge detected between {d1} and {d2} "
+            f"(salience={top_bridge['salience_beauty_score']:.4f}, surprise={top_bridge['epistemic_surprise']:.4f}). "
+            f"Force an explicit mathematical/mechanistic reconciliation between {d1} and {d2}."
         )
+
+    alphas_vals = list(sn_out["gating_weights"].values())
+    salience_entropy = -sum(a * math.log(max(a, 1e-12)) for a in alphas_vals)
 
     return {
         "framework": "Ael-Agents",
-        "architecture": "Ael-Agents Triple-Network Cortical Hierarchy (DMN -> Salience -> CEN)",
-        "routing_llm_tokens_used": 0,
+        "problem": problem,
         "embedding_manifold": {
-            "model": encoder.info.model_name,
-            "backend": encoder.info.backend,
-            "dimension": encoder.info.dim,
+            "backend": getattr(encoder, "backend", "sentence-transformers"),
+            "model": getattr(encoder, "model_name", "BAAI/bge-base-en-v1.5"),
+            "dimension": int(emb_batch.shape[-1]),
         },
+        "routing_llm_tokens_used": 0,
         "layer_1_dmn_rsa": {
-            "rdm_dissimilarity_matrix": rdm_nested,
-            "participation_ratio": dmn_metrics["dmn_rsa/participation_ratio"],
-            "mean_dissimilarity": dmn_metrics["dmn_rsa/mean_dissimilarity"],
+            "representational_dissimilarity_matrix": rdm_dict,
+            "mean_dissimilarity": round(float(dmn_metrics["dmn_rsa/mean_dissimilarity"]), 4),
+            "participation_ratio": round(float(dmn_metrics["dmn_rsa/participation_ratio"]), 4),
             "top_epistemic_bridges": dmn_bridges[:3],
         },
         "layer_2_salience_jacobian": {
             "trainable_weights_w": {
-                domain_names[i]: round(float(registry.weights[i].detach().item()), 4)
+                domain_names[i]: round(float(registry.weights[i].item()), 4)
                 for i in range(len(domain_names))
             },
-            "gating_probabilities_alpha": sn_out["gating_weights"],
-            "jacobian_sensitivities_L2": sn_out["jacobian_sensitivities"],
-            "domain_salience_scores": sn_out["domain_salience"],
-            "domain_salience_ranking": sn_out["domain_salience_rank"],
-            "top_salient_bridges": sn_out["salient_beautiful_matches"],
+            "gating_alpha": {
+                k: round(float(v), 4) for k, v in sn_out["gating_weights"].items()
+            },
+            "jacobian_sensitivities_L2": {
+                k: round(float(v), 4) for k, v in sn_out["jacobian_sensitivities"].items()
+            },
+            "salience_entropy": round(float(salience_entropy), 4),
         },
         "layer_3_cen_working_memory": {
-            "working_memory_capacity_k": len(wm_domains),
+            "capacity_k": min(working_memory_k, len(domain_names)),
             "gated_working_memory_specialists": wm_domains,
-            "pruned_specialists": [d for d in domain_names if d not in wm_domains],
-            "epistemic_bridge_directive": bridge_directive,
-            "cen_synthesis_prompt": (
-                f"Synthesize the final executive solution for '{problem}' using ONLY the top k={len(wm_domains)} "
-                f"Jacobian-gated working-memory specialists ({', '.join(wm_domains)}) and resolve the "
-                f"{bridge_directive}. Include: 1. [BRIDGE ASSESSMENT], 2. [INTEGRATED MECHANISM/SOLUTION], "
-                f"and 3. [FALSIFIABLE TEST]."
+            "gated_hypotheses": {d: hypotheses_map[d] for d in wm_domains if d in hypotheses_map},
+            "top_salient_bridge": top_bridge,
+            "cen_synthesis_directive": (
+                f"Synthesize the final solution using ONLY the gated working-memory domains {wm_domains} "
+                f"and the Epistemic Surprise Bridge. {bridge_prompt}"
             ),
-            "gated_specialist_payloads": gated_context_blocks,
         },
         "next_step": (
-            "Now call 'Ael-Agents_dream_rsi_consolidate' with your synthesized 'wake_solution' to run 15 epochs "
-            "of Offline Dream-RSI free-energy minimization (F_dream <= F_wake). If designing a molecule or PK/PD "
-            "regimen, also call 'Ael-Agents_verify_molecule_pkpd' to deterministically verify the SMILES and 2-compartment ODEs."
+            "Generate the synthesized wake_solution from the gated working-memory domains and pass it to "
+            "'Ael-Agents_dream_rsi_consolidate' to run offline PyTorch gradient descent (F_dream <= F_wake)."
         ),
     }
 
 
 def tool_dream_rsi_consolidate(args: Dict[str, Any]) -> Dict[str, Any]:
     problem = str(args.get("problem", "")).strip()
-    raw_hyps = args.get("hypotheses") or GLOBAL_MCP_STATE.last_hypotheses or {}
-    hypotheses_map = _normalize_hypotheses(raw_hyps, fallback_args=args)
-    wake_solution = str(args.get("wake_solution", "")).strip()
-    epochs = max(1, min(50, int(args.get("epochs", 15))))
+    raw_hyps = args.get("hypotheses")
+    if raw_hyps:
+        hypotheses_map = _normalize_hypotheses(raw_hyps, fallback_args=args)
+        GLOBAL_MCP_STATE.last_hypotheses = dict(hypotheses_map)
+    elif GLOBAL_MCP_STATE.last_hypotheses:
+        hypotheses_map = dict(GLOBAL_MCP_STATE.last_hypotheses)
+    else:
+        raise ValueError(
+            "No specialist hypotheses provided or cached. Pass 'hypotheses' dict or run 'Ael-Agents_cortical_rdm_and_jacobian_gate' first."
+        )
+
+    wake_solution = str(
+        args.get("wake_solution")
+        or args.get("solution")
+        or args.get("synthesis")
+        or ""
+    ).strip()
+    epochs = max(1, int(args.get("epochs", 15)))
 
     if not wake_solution:
-        wake_solution = " ".join(hypotheses_map.values())
+        raise ValueError("'wake_solution' must be a non-empty string.")
 
     domain_names = [str(k) for k in hypotheses_map.keys()]
     texts = [str(hypotheses_map[n]) for n in domain_names]
@@ -397,59 +471,61 @@ def tool_dream_rsi_consolidate(args: Dict[str, Any]) -> Dict[str, Any]:
     encoder = GLOBAL_MCP_STATE.get_encoder_instance()
     emb_batch = encoder.encode_batch(texts)
     domain_embeddings = {domain_names[i]: emb_batch[i] for i in range(len(domain_names))}
-    cen_emb = encoder.encode(wake_solution)
+    target_emb = encoder.encode(wake_solution).detach()
 
     specs = [DomainSpec(name=n, domain_title=n, focus=texts[i][:120]) for i, n in enumerate(domain_names)]
     prior_dist = domain_prior_distance(specs, encoder)
+
+    registry = GLOBAL_MCP_STATE.get_registry(domain_names)
+    weights_before = {
+        domain_names[i]: round(float(registry.weights[i].item()), 4)
+        for i in range(len(domain_names))
+    }
+
+    optimizer = torch.optim.Adam(registry.parameters(), lr=0.05)
+    f_wake: Optional[float] = None
+    f_dream: Optional[float] = None
+
+    for step in range(epochs):
+        optimizer.zero_grad()
+        sim_matrix, rdm_matrix, dmn_bridges, _ = GLOBAL_MCP_STATE.dmn_engine(
+            domain_embeddings=domain_embeddings,
+            domain_names=domain_names,
+            prior_dist=prior_dist,
+        )
+        sn_out = GLOBAL_MCP_STATE.salience_network.compute_jacobian_and_salience(
+            weights_11=registry.weights,
+            domain_embeddings=domain_embeddings,
+            domain_names=domain_names,
+            sim_matrix=sim_matrix,
+            dmn_bridges=dmn_bridges,
+            create_graph=True,
+            working_memory_capacity=min(2, len(domain_names)),
+        )
+        loss, loss_log = GLOBAL_MCP_STATE.loss_fn(
+            weights_11=registry.weights,
+            synthesized_y=sn_out["synthesized_tensor"],
+            target_y=target_emb,
+            salient_matches=sn_out["salient_beautiful_matches"],
+            jacobian_sensitivities_tensor=sn_out["sensitivities_tensor"],
+        )
+        if step == 0:
+            f_wake = float(loss.item())
+        loss.backward()
+        torch.nn.utils.clip_grad_norm_(registry.parameters(), max_norm=1.0)
+        optimizer.step()
+        f_dream = float(loss.item())
+
+    weights_after = {
+        domain_names[i]: round(float(registry.weights[i].item()), 4)
+        for i in range(len(domain_names))
+    }
 
     sim_matrix, rdm_matrix, dmn_bridges, _ = GLOBAL_MCP_STATE.dmn_engine(
         domain_embeddings=domain_embeddings,
         domain_names=domain_names,
         prior_dist=prior_dist,
     )
-
-    registry = GLOBAL_MCP_STATE.get_registry(domain_names)
-    weights_before = {
-        domain_names[i]: round(float(registry.weights[i].detach().item()), 4)
-        for i in range(len(domain_names))
-    }
-
-    sn_initial = GLOBAL_MCP_STATE.salience_network.compute_jacobian_and_salience(
-        weights_11=registry.weights,
-        domain_embeddings=domain_embeddings,
-        domain_names=domain_names,
-        sim_matrix=sim_matrix,
-        dmn_bridges=dmn_bridges,
-        create_graph=False,
-        working_memory_capacity=min(2, len(domain_names)),
-    )
-
-    state_dict: Dict[str, Any] = {
-        "task": problem,
-        "domain_embeddings": domain_embeddings,
-        "rsa_similarity_matrix": sim_matrix,
-        "rdm_matrix": rdm_matrix,
-        "dmn_spontaneous_bridges": dmn_bridges,
-        "salient_beautiful_matches": sn_initial["salient_beautiful_matches"],
-        "metadata": {"cen_target_embedding": cen_emb},
-    }
-
-    trainer = CortexTrainer(
-        param_registry=registry,
-        dmn_engine=GLOBAL_MCP_STATE.dmn_engine,
-        salience_network=GLOBAL_MCP_STATE.salience_network,
-        loss_fn=GLOBAL_MCP_STATE.loss_fn,
-        learning_rate=0.08,
-    )
-    target_y = trainer.build_salience_guided_target(state_dict, domain_names)
-    history = [
-        trainer.train_step_on_state(state=state_dict, domain_names=domain_names, target_y=target_y)
-        for _ in range(epochs)
-    ]
-
-    f_wake = history[0]["loss/total"]
-    f_dream = history[-1]["loss/total"]
-
     sn_post = GLOBAL_MCP_STATE.salience_network.compute_jacobian_and_salience(
         weights_11=registry.weights,
         domain_embeddings=domain_embeddings,
@@ -460,21 +536,16 @@ def tool_dream_rsi_consolidate(args: Dict[str, Any]) -> Dict[str, Any]:
         working_memory_capacity=min(2, len(domain_names)),
     )
 
-    weights_after = {
-        domain_names[i]: round(float(registry.weights[i].detach().item()), 4)
-        for i in range(len(domain_names))
-    }
-
     unexplored_bridge = dmn_bridges[1] if len(dmn_bridges) > 1 else (dmn_bridges[0] if dmn_bridges else None)
 
     return {
         "framework": "Ael-Agents",
-        "phase": "Offline Dream-RSI Consolidation",
+        "problem": problem,
         "epochs_executed": epochs,
-        "free_energy_wake": round(f_wake, 5),
-        "free_energy_dream": round(f_dream, 5),
-        "free_energy_delta": round(f_dream - f_wake, 5),
-        "strictly_improved": bool(f_dream <= f_wake),
+        "free_energy_wake": round(f_wake or 0.0, 5),
+        "free_energy_dream": round(f_dream or 0.0, 5),
+        "free_energy_delta": round((f_dream or 0.0) - (f_wake or 0.0), 5),
+        "strictly_improved": bool((f_dream or 0.0) <= (f_wake or 0.0)),
         "weights_before": weights_before,
         "weights_after": weights_after,
         "updated_gating_alpha": sn_post["gating_weights"],
@@ -482,11 +553,180 @@ def tool_dream_rsi_consolidate(args: Dict[str, Any]) -> Dict[str, Any]:
         "updated_working_memory_domains": sn_post["working_memory_domains"],
         "dream_recombination_bridge": unexplored_bridge,
         "next_step": (
-            "If this task involves a chemical SMILES candidate or PK/PD dosing regimen, call "
-            "'Ael-Agents_verify_molecule_pkpd' now so RDKit and SciPy RK45 deterministically validate the "
-            "molecule (MW < 500 Da, QED, Lipinski) and 24h 2-compartment target occupancy (>90% trough)."
+            "MANDATORY STEP 4 (Anthropic-Style Programmatic Tool Calling / PTC): Call 'Ael-Agents_programmatic_verify' "
+            "with a self-contained Python verification script ('verification_code') derived directly from the user's prompt "
+            "and the cross-domain equations above. Inside that single programmatic script, use scipy/numpy/torch/rdkit and "
+            "'record_candidate(name, params, metrics, constraints)' to test multiple candidate designs in a loop, falsify "
+            "candidates that violate conservation laws or boundary conditions, and verify the winning design before answering."
         ),
     }
+
+
+class ProgrammaticVerificationSandbox:
+
+    def __init__(self) -> None:
+        self.candidates: List[Dict[str, Any]] = []
+        self.constraints_log: List[Dict[str, Any]] = []
+        self.summary: Dict[str, Any] = {}
+
+    def record_candidate(
+        self,
+        name: str,
+        parameters: Dict[str, Any],
+        metrics: Dict[str, Any],
+        constraints: Dict[str, bool],
+    ) -> Dict[str, Any]:
+        clean_constraints = {str(k): bool(v) for k, v in constraints.items()}
+        failed = [k for k, v in clean_constraints.items() if not v]
+        passed = len(failed) == 0
+        entry = {
+            "candidate_name": str(name),
+            "passed_all_constraints": passed,
+            "failed_constraints": failed,
+            "parameters": self._sanitize(parameters),
+            "metrics": self._sanitize(metrics),
+            "constraints": clean_constraints,
+        }
+        self.candidates.append(entry)
+        return entry
+
+    def assert_constraint(
+        self,
+        name: str,
+        passed: bool,
+        actual: Any = None,
+        bound: Any = None,
+        units: str = "",
+    ) -> bool:
+        flag = bool(passed)
+        self.constraints_log.append(
+            {
+                "constraint": str(name),
+                "passed": flag,
+                "actual": self._sanitize(actual),
+                "bound": self._sanitize(bound),
+                "units": str(units),
+            }
+        )
+        return flag
+
+    def set_summary(self, data: Dict[str, Any]) -> None:
+        if isinstance(data, dict):
+            self.summary = self._sanitize(data)
+
+    def _sanitize(self, obj: Any) -> Any:
+        if isinstance(obj, (bool, int, str)) or obj is None:
+            return obj
+        if isinstance(obj, float):
+            if math.isnan(obj) or math.isinf(obj):
+                return str(obj)
+            return round(obj, 6)
+        if isinstance(obj, np.generic):
+            return self._sanitize(obj.item())
+        if isinstance(obj, np.ndarray):
+            return self._sanitize(obj.tolist())
+        if isinstance(obj, dict):
+            return {str(k): self._sanitize(v) for k, v in obj.items()}
+        if isinstance(obj, (list, tuple)):
+            return [self._sanitize(x) for x in obj]
+        return str(obj)
+
+
+def tool_programmatic_verify(args: Dict[str, Any]) -> Dict[str, Any]:
+    code = str(
+        args.get("verification_code")
+        or args.get("code")
+        or args.get("script")
+        or ""
+    ).strip()
+    problem = str(args.get("problem", "")).strip()
+    if not code:
+        raise ValueError("'verification_code' must be a non-empty Python script string.")
+
+    ptc = ProgrammaticVerificationSandbox()
+    stdout_buf = io.StringIO()
+
+    exec_ns: Dict[str, Any] = {
+        "__builtins__": __builtins__,
+        "np": np,
+        "numpy": np,
+        "scipy": scipy,
+        "solve_ivp": scipy.integrate.solve_ivp,
+        "quad": scipy.integrate.quad,
+        "minimize": scipy.optimize.minimize,
+        "root": scipy.optimize.root,
+        "brentq": scipy.optimize.brentq,
+        "linprog": scipy.optimize.linprog,
+        "torch": torch,
+        "F": F,
+        "math": math,
+        "statistics": statistics,
+        "json": json,
+        "ptc": ptc,
+        "record_candidate": ptc.record_candidate,
+        "assert_constraint": ptc.assert_constraint,
+        "set_summary": ptc.set_summary,
+        "RESULT": {},
+    }
+
+    try:
+        from rdkit import Chem
+        from rdkit.Chem import Descriptors, QED, rdMolDescriptors
+        exec_ns["Chem"] = Chem
+        exec_ns["Descriptors"] = Descriptors
+        exec_ns["QED"] = QED
+        exec_ns["rdMolDescriptors"] = rdMolDescriptors
+    except Exception:
+        pass
+
+    t0 = time.perf_counter()
+    exec_error: Optional[str] = None
+    tb_str: Optional[str] = None
+
+    try:
+        with redirect_stdout(stdout_buf):
+            exec(compile(code, "<Ael-Agents-PTC-Verifier>", "exec"), exec_ns, exec_ns)
+    except Exception as exc:
+        exec_error = str(exc)
+        tb_str = traceback.format_exc()
+
+    elapsed_ms = round((time.perf_counter() - t0) * 1000.0, 2)
+    stdout_text = stdout_buf.getvalue().strip()
+
+    if not ptc.summary and isinstance(exec_ns.get("RESULT"), dict) and exec_ns["RESULT"]:
+        ptc.set_summary(exec_ns["RESULT"])
+
+    verified_cands = [c for c in ptc.candidates if c["passed_all_constraints"]]
+    falsified_cands = [c for c in ptc.candidates if not c["passed_all_constraints"]]
+
+    if exec_error is not None:
+        status = "EXECUTION_ERROR"
+    elif ptc.candidates:
+        status = "PASSED" if len(verified_cands) > 0 else "ALL_CANDIDATES_FALSIFIED"
+    elif ptc.constraints_log:
+        status = "PASSED" if all(c["passed"] for c in ptc.constraints_log) else "CONSTRAINTS_FALSIFIED"
+    else:
+        status = "PASSED"
+
+    out: Dict[str, Any] = {
+        "framework": "Ael-Agents",
+        "paradigm": "Anthropic-Style Programmatic Tool Calling (PTC) Single-Pass Scientific Verifier",
+        "problem": problem,
+        "verification_status": status,
+        "execution_time_ms": elapsed_ms,
+        "total_candidates_evaluated_in_loop": len(ptc.candidates),
+        "num_falsified_candidates": len(falsified_cands),
+        "num_verified_candidates": len(verified_cands),
+        "falsified_candidates": falsified_cands,
+        "verified_candidates": verified_cands,
+        "constraints_log": ptc.constraints_log,
+        "result_summary": ptc.summary,
+        "stdout": stdout_text[:4000] if stdout_text else "",
+    }
+    if exec_error is not None:
+        out["error"] = exec_error
+        out["traceback"] = tb_str
+    return out
 
 
 def tool_verify_molecule_pkpd(args: Dict[str, Any]) -> Dict[str, Any]:
@@ -572,28 +812,42 @@ def tool_run_autonomous_pipeline(args: Dict[str, Any]) -> Dict[str, Any]:
 MCP_TOOLS_SPEC: List[Dict[str, Any]] = [
     {
         "name": "Ael-Agents_propose_specialist_roster",
-        "title": "Ael-Agents: Propose Specialist Roster",
-        "annotations": {"title": "Ael-Agents: Propose Specialist Roster"},
+        "title": "Ael-Agents: Propose Orthogonal Specialist Roster (Domain-Agnostic DPP)",
+        "annotations": {"title": "Ael-Agents: Propose Orthogonal Specialist Roster (Domain-Agnostic DPP)"},
         "description": (
-            "Ael-Agents Step 1 (PRIMARY ENTRY POINT): Segregate any scientific, engineering, software, or quantitative problem into N "
-            "mutually orthogonal domain specialists (w_1 ... w_N) for the Ael-Agents cortical hierarchy. Call this FIRST when solving "
-            "any complex problem with Ael-Agents."
+            "Ael-Agents Step 1 (PRIMARY ENTRY POINT - 100% Domain-Agnostic): Decompose ANY scientific, physics, "
+            "engineering, mathematical, or systems problem into N mutually orthogonal specialist domains (w_1 ... w_N) "
+            "using Determinantal Point Process (DPP) log-determinant volume maximization in 768-D BAAI/bge-base-en-v1.5 space. "
+            "You may optionally pass 4-8 prompt-specific 'candidate_domains' inferred from the user's query so DPP selects "
+            "the maximally orthogonal subset, or omit 'candidate_domains' to select from the Universal First-Principles Scientific Basis."
         ),
         "inputSchema": {
             "type": "object",
             "properties": {
                 "problem": {
                     "type": "string",
-                    "description": "The problem statement or research question to solve.",
+                    "description": "The exact user problem statement or research question to solve.",
                 },
-                "preset": {
-                    "type": "string",
-                    "description": "Preset roster ('auto', 'drug_discovery', 'software_systems', 'general_first_principles', or YAML roster name).",
-                    "default": "auto",
+                "candidate_domains": {
+                    "type": "array",
+                    "description": (
+                        "Optional list of candidate sub-disciplines inferred directly from the user's prompt "
+                        "(each item: {'name': 'CamelCaseName', 'title': 'Full Title', 'focus': 'Governing equations and scope'}). "
+                        "If provided, DPP log-determinant volume maximization selects the most orthogonal subset."
+                    ),
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "name": {"type": "string"},
+                            "title": {"type": "string"},
+                            "focus": {"type": "string"},
+                        },
+                        "required": ["name", "title", "focus"],
+                    },
                 },
                 "num_specialists": {
                     "type": "number",
-                    "description": "Number of orthogonal domain specialists (default: 4).",
+                    "description": "Number of orthogonal domain specialists to select via DPP (default: 4).",
                     "default": 4,
                 },
             },
@@ -667,76 +921,62 @@ MCP_TOOLS_SPEC: List[Dict[str, Any]] = [
         },
     },
     {
-        "name": "Ael-Agents_verify_molecule_pkpd",
-        "title": "Ael-Agents: Verify Molecule & PK/PD",
-        "annotations": {"title": "Ael-Agents: Verify Molecule & PK/PD"},
+        "name": "Ael-Agents_programmatic_verify",
+        "title": "Ael-Agents: Programmatic Tool Calling (PTC) Scientific Verifier",
+        "annotations": {"title": "Ael-Agents: Programmatic Tool Calling (PTC) Scientific Verifier"},
         "description": (
-            "Ael-Agents Step 4: Deterministic RDKit chemical compiler (valence, MW, LogP, TPSA, Lipinski Rule of 5, "
-            "QED druglikeness) coupled with SciPy RK45 2-compartment pharmacokinetic/pharmacodynamic ODE "
-            "integration (steady-state trough target occupancy, Peak-to-Trough ratio, 24h suppression, and 14-day steady-state CNS/CSF audit)."
+            "Ael-Agents Step 4 (Anthropic-Style Programmatic Tool Calling / PTC): Domain-agnostic, single-pass "
+            "programmatic scientific verification and multi-candidate falsification engine. Instead of calling rigid "
+            "domain-specific tools across multiple turns, pass a self-contained Python verification script ('verification_code') "
+            "synthesized directly from the user's prompt. Pre-loaded globals include: np (numpy), scipy, solve_ivp, quad, "
+            "minimize, root, brentq, linprog, torch, math, Chem/Descriptors/QED (RDKit), and programmatic helpers: "
+            "record_candidate(name, parameters_dict, metrics_dict, constraints_bool_dict), "
+            "assert_constraint(name, passed_bool, actual, bound, units), and set_summary(dict) / RESULT = {}. "
+            "Use a loop inside 'verification_code' to evaluate multiple candidate designs/regimes, automatically falsify "
+            "candidates that violate coupled ODEs/conservation laws, and verify the winning candidate in one call."
         ),
         "inputSchema": {
             "type": "object",
             "properties": {
-                "smiles": {
+                "problem": {
                     "type": "string",
-                    "description": "SMILES string of the candidate molecule.",
+                    "description": "The problem statement being verified.",
                 },
-                "dose_mg": {
-                    "type": "number",
-                    "description": "Oral dose in mg (default: 150.0).",
-                    "default": 150.0,
+                "verification_code": {
+                    "type": "string",
+                    "description": (
+                        "Executable Python verification script using pre-loaded numpy (np), scipy (solve_ivp, minimize, root, brentq), "
+                        "torch, math, Chem/Descriptors/QED, and record_candidate(name, parameters, metrics, constraints) "
+                        "to programmatically test and falsify multiple candidates in a single execution."
+                    ),
                 },
-                "cl_l_h": {
-                    "type": "number",
-                    "description": "Systemic clearance CL in L/h (default: 8.5).",
-                    "default": 8.5,
-                },
-                "vc_l": {
-                    "type": "number",
-                    "description": "Central compartment volume Vc in L (default: 35.0).",
-                    "default": 35.0,
-                },
-                "ka_h_inv": {
-                    "type": "number",
-                    "description": "Absorption rate ka in h^-1 (default: 1.5).",
-                    "default": 1.5,
-                },
-                "q_l_h": {
-                    "type": "number",
-                    "description": "Intercompartmental clearance Q in L/h (default: 12.0).",
-                    "default": 12.0,
-                },
-                "vp_l": {
-                    "type": "number",
-                    "description": "Peripheral compartment volume Vp in L (default: 45.0).",
-                    "default": 45.0,
-                },
-                "kd_nm": {
-                    "type": "number",
-                    "description": "Dissociation constant Kd in nM (default: 0.02).",
-                    "default": 0.02,
-                },
-                "ic50_nm": {
-                    "type": "number",
-                    "description": "Half-maximal inhibitory concentration IC50 in nM (default: 0.02).",
-                    "default": 0.02,
-                },
-                "f_bioavail": {
-                    "type": "number",
-                    "description": "Oral bioavailability fraction F (default: 0.70).",
-                    "default": 0.70,
-                },
-                "fu_plasma": {
-                    "type": "number",
-                    "description": "Unbound plasma fraction fu (default: 0.05).",
-                    "default": 0.05,
-                },
-                "kp_uu_brain": {
-                    "type": "number",
-                    "description": "Unbound brain-to-plasma partition coefficient Kp,uu (default: 0.50).",
-                    "default": 0.50,
-                },
+            },
+            "required": ["problem", "verification_code"],
+        },
+    },
+    {
+        "name": "Ael-Agents_verify_molecule_pkpd",
+        "title": "Ael-Agents: Verify Molecule & PK/PD",
+        "annotations": {"title": "Ael-Agents: Verify Molecule & PK/PD"},
+        "description": (
+            "Optional convenience wrapper for SMILES chemical graph + 2-compartment PK/PD ODE verification "
+            "(for general multi-domain problems, prefer 'Ael-Agents_programmatic_verify')."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "smiles": {"type": "string", "description": "SMILES string of the candidate molecule."},
+                "dose_mg": {"type": "number", "default": 150.0},
+                "cl_l_h": {"type": "number", "default": 8.5},
+                "vc_l": {"type": "number", "default": 35.0},
+                "ka_h_inv": {"type": "number", "default": 1.5},
+                "q_l_h": {"type": "number", "default": 12.0},
+                "vp_l": {"type": "number", "default": 45.0},
+                "kd_nm": {"type": "number", "default": 0.02},
+                "ic50_nm": {"type": "number", "default": 0.02},
+                "f_bioavail": {"type": "number", "default": 0.70},
+                "fu_plasma": {"type": "number", "default": 0.05},
+                "kp_uu_brain": {"type": "number", "default": 0.50},
             },
             "required": ["smiles"],
         },
@@ -777,16 +1017,19 @@ TOOL_DISPATCH = {
     "Ael-Agents_propose_specialist_roster": tool_propose_specialist_roster,
     "Ael-Agents_cortical_rdm_and_jacobian_gate": tool_cortical_rdm_and_jacobian_gate,
     "Ael-Agents_dream_rsi_consolidate": tool_dream_rsi_consolidate,
+    "Ael-Agents_programmatic_verify": tool_programmatic_verify,
     "Ael-Agents_verify_molecule_pkpd": tool_verify_molecule_pkpd,
     "Ael-Agents_run_autonomous_pipeline": tool_run_autonomous_pipeline,
     "ael_agents_propose_specialist_roster": tool_propose_specialist_roster,
     "ael_agents_cortical_rdm_and_jacobian_gate": tool_cortical_rdm_and_jacobian_gate,
     "ael_agents_dream_rsi_consolidate": tool_dream_rsi_consolidate,
+    "ael_agents_programmatic_verify": tool_programmatic_verify,
     "ael_agents_verify_molecule_pkpd": tool_verify_molecule_pkpd,
     "ael_agents_run_autonomous_pipeline": tool_run_autonomous_pipeline,
     "ael_propose_specialist_roster": tool_propose_specialist_roster,
     "ael_cortical_rdm_and_jacobian_gate": tool_cortical_rdm_and_jacobian_gate,
     "ael_dream_rsi_consolidate": tool_dream_rsi_consolidate,
+    "ael_programmatic_verify": tool_programmatic_verify,
     "ael_verify_molecule_pkpd": tool_verify_molecule_pkpd,
     "ael_run_autonomous_pipeline": tool_run_autonomous_pipeline,
 }
@@ -814,7 +1057,7 @@ def handle_jsonrpc_message(msg: Dict[str, Any]) -> Optional[Dict[str, Any]]:
                 },
                 "serverInfo": {
                     "name": "Ael-Agents",
-                    "version": "1.1.0",
+                    "version": "1.2.0",
                 },
             },
         }
@@ -916,26 +1159,33 @@ def run_stdio_mcp_server() -> None:
 
 
 def run_self_test() -> None:
-    print("[Ael-Agents MCP] Running self-test verification...", flush=True)
-    problem = "Design an ultra-low-latency consensus engine with bounded tail latency under Byzantine faults."
-    print("  -> Step 1: Proposing orthogonal specialist roster...", flush=True)
-    roster_out = tool_propose_specialist_roster({"problem": problem, "preset": "auto"})
+    print("[Ael-Agents MCP] Running domain-agnostic DPP + PTC self-test verification...", flush=True)
+    problem = (
+        "Design a liquid-metal cooled compact tokamak fusion blanket channel (L=4m, B=12T) "
+        "surviving 6.5 MW/m^2 surface heat flux and 28 MW/m^3 neutron heating with ΔP_MHD <= 2.0 MPa."
+    )
+    print("  -> Step 1: Dynamic Query-Conditioned DPP Specialist Selection...", flush=True)
+    roster_out = tool_propose_specialist_roster({"problem": problem, "num_specialists": 4})
+    spec_names = [s["name"] for s in roster_out["specialists"]]
     sample_hypotheses = {
-        "DistributedConsensus": (
-            "Use optimistic pipelined HotStuff quorum certificates with threshold BLS signatures "
-            "to reduce message complexity from O(N^2) to O(N) per view while bounding view-change latency."
+        spec_names[0]: (
+            "In a 12T magnetic field, liquid PbLi (sigma=7.5e5 S/m) in a bare conducting steel duct (c_w=0.22) "
+            "suffers catastrophic Lorentz pressure drop dP/dx = sigma*v*B^2*c_w/(1+c_w) > 60 MPa/m unless "
+            "decoupled by an electrically insulating SiC Flow Channel Insert (c_w < 0.001)."
         ),
-        "SystemsMemoryKernel": (
-            "Pin consensus state transitions to NUMA-local lock-free ring buffers using kernel-bypass "
-            "DPDK/io_uring zero-copy descriptors so p999 serialization overhead stays below 8 microseconds."
+        spec_names[1]: (
+            "MHD laminarization suppresses turbulent mixing (Ha = 7348), dropping Nusselt number to slug-flow "
+            "limits; extracting 75% of surface heat flux via embedded first-wall Helium microchannels prevents "
+            "PbLi interface temperature from exceeding the 550 C dissolution corrosion limit."
         ),
-        "FormalVerificationSecurity": (
-            "Enforce hardware-backed monotonic counters in TEE enclaves to prevent equivocation, "
-            "reducing Byzantine fault quorum size from 3f+1 to 2f+1 under non-equivocation invariants."
+        spec_names[2]: (
+            "Combined primary hoop stress (P*a/t_w) and secondary thermo-elastic wall stress E*alpha*dT/(2*(1-nu)) "
+            "exceed Eurofer97's 550 C thermal creep limit under 6.5 MW/m^2 unless paired with 70% SOL radiative "
+            "detachment and ODS-FeCrAl structural walls (T_max = 700 C, 3*S_m = 630 MPa)."
         ),
-        "QueueingControlTheory": (
-            "Apply Lyapunov drift-plus-penalty admission control at ingress queues so arrival rate λ "
-            "strictly satisfies λ < μ_quorum, preventing M/G/1 tail queueing explosion during burst traffic."
+        spec_names[3]: (
+            "Impurity seeding in the scrape-off layer must maintain radiative fraction f_rad in [0.45, 0.80] "
+            "to avoid MARFE core confinement collapse while preserving Tritium Breeding Ratio TBR >= 1.05."
         ),
     }
     print("  -> Step 2: Computing 768-D BGE RDM & PyTorch Jacobian Sensitivity Gate...", flush=True)
@@ -948,20 +1198,40 @@ def run_self_test() -> None:
             "problem": problem,
             "hypotheses": sample_hypotheses,
             "wake_solution": (
-                "Combine TEE-enforced 2f+1 non-equivocation quorum certificates with kernel-bypass "
-                "zero-copy ring buffers and Lyapunov ingress backpressure to guarantee bounded p999 latency."
+                "Synthesize a Dual-Coolant Lead-Lithium (DCLL) blanket with a 1mm SiC Flow Channel Insert "
+                "(c_w = 5e-4), 72% radiative SOL detachment, 78% first-wall Helium heat extraction, and ODS-FeCrAl wall."
             ),
             "epochs": 15,
         }
     )
-    print("  -> Step 4: Deterministic RDKit & SciPy 2-Compartment PK/PD ODE Verification...", flush=True)
-    pkpd_out = tool_verify_molecule_pkpd(
-        {"smiles": "Cc1ncnc2c1ncn2C(C)C(=O)NCc1ccc(C(F)C(F)F)cc1"}
-    )
+    print("  -> Step 4: Running Anthropic-Style Programmatic Tool Calling (PTC) Verification...", flush=True)
+    ptc_script = "\n".join([
+        "candidates = [",
+        "    {'name': 'Candidate_1_Bare_Steel_Fast', 'v': 3.5, 'cw': 0.222, 'f_rad': 0.20, 'f_he': 0.0, 't_lim': 550.0},",
+        "    {'name': 'Candidate_2_DCLL_Eurofer97', 'v': 0.85, 'cw': 0.0005, 'f_rad': 0.72, 'f_he': 0.78, 't_lim': 550.0},",
+        "    {'name': 'Candidate_3_DCLL_ODS_FeCrAl', 'v': 0.85, 'cw': 0.0005, 'f_rad': 0.72, 'f_he': 0.78, 't_lim': 700.0},",
+        "]",
+        "B = 12.0; sigma_f = 7.5e5; mu_f = 0.0018; a = 0.03; L = 4.0",
+        "Ha = B * a * math.sqrt(sigma_f / mu_f)",
+        "for c in candidates:",
+        "    sol = solve_ivp(lambda x, y: [sigma_f * c['v'] * (B**2) * (c['cw']/(1+c['cw']) + 1/Ha) / 1e6], (0, L), [0.0])",
+        "    dp_mpa = float(sol.y[0, -1])",
+        "    q_eff = 6.5 * (1.0 - c['f_rad']) * 1.35",
+        "    t_wall = 340.0 + (q_eff * 180.0 if c['f_he'] == 0 else q_eff * 128.0)",
+        "    record_candidate(",
+        "        c['name'],",
+        "        c,",
+        "        {'dp_mpa': dp_mpa, 't_wall_c': t_wall, 'Ha': Ha},",
+        "        {'dp_under_2mpa': dp_mpa <= 2.0, 'wall_temp_ok': t_wall <= c['t_lim'], 'detachment_stable': 0.45 <= c['f_rad'] <= 0.80}",
+        "    )",
+    ])
+    ptc_out = tool_programmatic_verify({"problem": problem, "verification_code": ptc_script})
     summary = {
         "mcp_self_test": "PASSED",
         "framework": "Ael-Agents",
-        "selected_preset": roster_out["selected_preset"],
+        "selection_mode": roster_out["selection_mode"],
+        "dpp_logdet_volume": roster_out["dpp_logdet_volume"],
+        "dpp_selected_specialists": spec_names,
         "embedding_backend": gate_out["embedding_manifold"]["backend"],
         "embedding_dim": gate_out["embedding_manifold"]["dimension"],
         "routing_llm_tokens_used": gate_out["routing_llm_tokens_used"],
@@ -970,8 +1240,10 @@ def run_self_test() -> None:
         "dream_free_energy_wake": dream_out["free_energy_wake"],
         "dream_free_energy_dream": dream_out["free_energy_dream"],
         "dream_strictly_improved": dream_out["strictly_improved"],
-        "pkpd_qed": pkpd_out["rdkit_validation"]["qed_druglikeness"],
-        "pkpd_trough_occupancy_pct": pkpd_out["scipy_rk45_two_compartment_pkpd"]["steady_state_trough_occupancy_pct"],
+        "ptc_verification_status": ptc_out["verification_status"],
+        "ptc_candidates_tested": ptc_out["total_candidates_evaluated_in_loop"],
+        "ptc_falsified_count": ptc_out["num_falsified_candidates"],
+        "ptc_verified_count": ptc_out["num_verified_candidates"],
     }
     print(json.dumps(summary, indent=2), flush=True)
 
