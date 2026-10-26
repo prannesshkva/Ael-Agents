@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 165" width="520" height="119">
+  <defs>
+    <radialGradient id="auraGlow" cx="50%" cy="54%" r="46%" fx="50%" fy="54%">
+      <stop offset="0%" stop-color="#e2e8f0" stop-opacity="0.22"/>
+      <stop offset="55%" stop-color="#64748b" stop-opacity="0.09"/>
+      <stop offset="100%" stop-color="#0d1117" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="outerGlow" x="-20%" y="-25%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="2" stdDeviation="12" flood-color="#cbd5e1" flood-opacity="0.18"/>
+    </filter>
+  </defs>
+
+  <!-- Soft radial aura (matching Harness2 glow in grey/white) -->
+  <ellipse cx="360" cy="88" rx="315" ry="68" fill="url(#auraGlow)"/>
+
+  <!-- Thick dark-slate rounded sticker contour behind wordmark (single text flow for guaranteed cross-OS kerning) -->
+  <text x="360" y="118" text-anchor="middle" filter="url(#outerGlow)" font-family="'Arial Rounded MT Bold', 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif" font-weight="800" font-size="84" letter-spacing="-1.5" stroke="#222734" stroke-width="22" stroke-linejoin="round" stroke-linecap="round" paint-order="stroke fill">
+    <tspan fill="#f8fafc">Ael</tspan><tspan fill="#64748b">-Agents</tspan><tspan dy="-36" dx="4" font-size="38" fill="#cbd5e1">1.2</tspan>
+  </text>
+
+  <!-- Crisp inner fill layer -->
+  <text x="360" y="118" text-anchor="middle" font-family="'Arial Rounded MT Bold', 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif" font-weight="800" font-size="84" letter-spacing="-1.5">
+    <tspan fill="#f8fafc">Ael</tspan><tspan fill="#94a3b8">-</tspan><tspan fill="#64748b">Agents</tspan><tspan dy="-36" dx="4" font-size="38" fill="#cbd5e1">1.2</tspan>
+  </text>
+
+  <!-- Gear icon nestled above 'Ael' (exact Harness2 gear motif in silver-white) -->
+  <g transform="translate(152, 36)">
+    <circle cx="0" cy="0" r="22" fill="#222734"/>
+    <g stroke="#e2e8f0" stroke-width="4.5" stroke-linecap="round">
+      <line x1="0" y1="-16" x2="0" y2="16"/>
+      <line x1="-16" y1="0" x2="16" y2="0"/>
+      <line x1="-11.3" y1="-11.3" x2="11.3" y2="11.3"/>
+      <line x1="11.3" y1="-11.3" x2="-11.3" y2="11.3"/>
+    </g>
+    <circle cx="0" cy="0" r="11.5" fill="#e2e8f0"/>
+    <circle cx="0" cy="0" r="5.2" fill="#222734"/>
+  </g>
+</svg>

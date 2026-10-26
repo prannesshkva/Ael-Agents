@@ -1,41 +1,33 @@
 <p align="center">
-  <img src="assets/A.jpg" alt="Ael-Agents Logo" width="240"/>
+  <img src="assets/ael_wordmark.svg" alt="Ael-Agents" width="480"/>
 </p>
 
-<h1 align="center">Ael-Agents (v1.2.0): The First Trainable, Domain-Agnostic Cortical MCP & Multi-Agent Engine</h1>
-<p align="center"><b>1-Click Plug-In · 5 Orthogonal Specialists from 1 Sentence · 0-Token PyTorch Jacobian Routing (-60% Context) · Live Code Verification · On-the-Fly Dream-RSI Self-Training</b></p>
+<h3 align="center">Trainable Cortical Co-Processing &amp; Code Verification for an Open World</h3>
 
 <p align="center">
-  <a href="https://doi.org/10.17605/OSF.IO/7R46Z"><img src="https://img.shields.io/badge/DOI-10.17605%2FOSF.IO%2F7R46Z-blue.svg" alt="DOI"/></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-CC_BY--NC--ND_4.0-lightgrey.svg" alt="License"/></a>
-  <a href="https://www.python.org/"><img src="https://img.shields.io/badge/Python-3.10%2B-3776AB.svg" alt="Python 3.10+"/></a>
-  <a href="https://pytorch.org/"><img src="https://img.shields.io/badge/PyTorch-0--Token_Jacobian_Gate-EE4C2C.svg" alt="PyTorch"/></a>
-  <a href="mcp_server.py"><img src="https://img.shields.io/badge/MCP-Claude_%7C_Cursor_%7C_Windsurf_%7C_Cline-D97757.svg" alt="MCP Ready"/></a>
-  <a href="mcp_server.py"><img src="https://img.shields.io/badge/Routing-768--D_DPP_Orthogonal-6A5ACD.svg" alt="768-D DPP"/></a>
-  <a href="mcp_server.py"><img src="https://img.shields.io/badge/Verifier-Programmatic_SciPy_%7C_PyTorch_%7C_RDKit-2E8B57.svg" alt="Programmatic Verifier"/></a>
-  <a href="core/dream_rsi.py"><img src="https://img.shields.io/badge/Self--Training-Dream--RSI_(F__dream_%3C%3D_F__wake)-8CAAE6.svg" alt="Dream-RSI"/></a>
-  <a href="https://smith.langchain.com/public/71010a71-b6cf-4e07-b6db-2d3553ad4a3a/r"><img src="https://img.shields.io/badge/LangSmith-Public_Trace-1C3C3C.svg" alt="LangSmith"/></a>
+  <a href="https://doi.org/10.17605/OSF.IO/7R46Z"><img src="https://img.shields.io/badge/Paper-OSF_DOI-e5e7eb?style=flat&labelColor=27272a&color=e5e7eb&logo=read-the-docs&logoColor=e5e7eb" alt="Paper"/></a>
+  <a href="https://gist.github.com/prannesshkva/637c5b9fcad19c99cf652b9ec6ef8e91"><img src="https://img.shields.io/badge/Benchmarks-2--Domain_Audit-cbd5e1?style=flat&labelColor=27272a&color=cbd5e1&logo=github&logoColor=e5e7eb" alt="Benchmarks"/></a>
+  <a href="mcp_server.py"><img src="https://img.shields.io/badge/MCP-Claude_%C2%B7_Cursor_%C2%B7_Windsurf-94a3b8?style=flat&labelColor=27272a&color=94a3b8" alt="MCP"/></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-CC_BY--NC--ND_4.0-64748b?style=flat&labelColor=27272a&color=64748b" alt="License"/></a>
 </p>
 
-**Ael-Agents (`v1.2.0`)** is the first **trainable, 100% domain-agnostic Cortical Co-Processor (MCP) and multi-agent reasoning engine** that turns a single plain-English sentence into code-verified engineering and scientific discovery—while cutting **100% of LLM routing tokens (`0` router tokens)** and **60%+ of noisy context bloat**.
+<p align="center">
+  <img src="assets/terminal_pill.svg" alt="claude mcp add Ael-Agents -- python mcp_server.py" width="580"/>
+</p>
 
-Most multi-agent frameworks treat orchestration as static prompt chaining: every agent talks to every other agent, an expensive LLM router burns 500–5,000+ tokens guessing who to listen to, context windows balloon past 30,000+ tokens, and there are **zero trainable parameters** that adapt to your problem.
+A **cortical co-processor** is the mathematical system around a language model that enables it to reason as a principal engineer: orthogonal specialist decomposition, working-memory gating, programmatic code verification, and recursive weight consolidation. **Cortical co-processing** is the process of optimizing that system on the fly.
 
-**Ael-Agents** replaces prompt engineering and heuristic swarm routing with a **live Wake → Focus → Prove → Dream-RSI loop** modeled on the human brain's Triple-Network Cortical Hierarchy (**Default Mode Network**, **Salience Network**, and **Central Executive Network**):
+**`Ael-Agents`** is a plug-and-play framework for **trainable cortical co-processing** in an open world, where agents encounter unseen scientific and engineering tasks from a single plain-English sentence. It connects two levels of optimization while keeping host LLM weights fixed:
 
-1. **Wake — 100% Domain-Agnostic 768-D DPP Specialist Selection (`DMN`)**: Projects any 1-sentence question into a 768-dimensional semantic manifold (`BAAI/bge-base-en-v1.5`) and maximizes Determinantal Point Process log-volume (`log det L_S`) over a 20-axis Universal Scientific Basis to wake `N = 5` maximally orthogonal specialists automatically.
-2. **Focus — Zero-Token PyTorch Autograd Jacobian Gate (`SN → CEN`)**: Instead of calling an LLM router, the Salience Network computes exact parameter sensitivities (`J_i = ||∂y/∂w_i||_2`) via `torch.autograd` at **0 LLM routing tokens**—pruning 60%+ of noisy context to gate strictly the top `k = 2` working-memory domains where the real physical bottleneck lives.
-3. **Prove — Programmatic Tool Calling Verification Sandbox (`Ael-Agents_programmatic_verify`)**: Before synthesizing a final answer, the model writes and executes a single-pass Python verification script (`numpy`, `scipy`, `torch`, `rdkit`, `record_candidate`) to simulate candidate architectures, catch internal math errors, and reject failing designs in code.
-4. **Dream — On-the-Fly Cortical Self-Training (`Offline Dream-RSI Consolidation`)**: Binds each specialist to a 1-to-1 trainable scalar weight (`w_1 ... w_N` in `DomainParameterRegistry`) and runs 15 epochs of AdamW gradient descent on `UnifiedCortexLoss` (`Alignment + Participation Ratio Diversity + Entropy`) to strictly reduce cortical free energy (`F_dream <= F_wake`) for the user in real time.
-5. **1-Click Plug-In Across Every MCP Client**: Works out-of-the-box inside **Claude Desktop**, **Claude Code**, **Cursor**, **Windsurf**, and **Cline/VS Code** with **zero external API keys required** in co-processor mode (or as a standalone autonomous SDK with Groq / OpenAI-compatible API keys).
+- **Task-level verification (`Wake → Focus → Prove`)** refines execution for the current prompt through a 3-stage pipeline: decompose the query into 5 orthogonal specialists via a **768-D Determinantal Point Process (`log det L_S`)**, gate strictly the top `k = 2` conflicting domains at **0 routing tokens (`-60%` context)** via exact PyTorch autograd Jacobians (`||∂y/∂w_i||_2`), and execute a single-pass Python/SciPy verification script (`Ael-Agents_programmatic_verify`) to falsify bad designs before answering.
+- **Cortical-level recursion (`Dream-RSI Consolidation`)** updates a persistent vector of trainable 1-to-1 specialist weights (`w_1 ... w_N`) via 15 epochs of gradient descent (`F_dream <= F_wake`), consolidating high-surprise cross-domain bridges from each task to guide future reasoning.
 
 ---
 
 > **Featured 2-Domain 1-Sentence Blinded Benchmark & Audit ([`CASE_STUDY_GIST.md`](CASE_STUDY_GIST.md)):**
-> Read the full 2-domain blinded evaluation comparing a standalone Frontier LLM against the exact same LLM connected to `Ael-Agents` (`v1.2.0`) on two plain-English 1-sentence engineering prompts:
-> 1. **12-Tesla Fusion Reactor Liquid-Metal MHD Blanket:** **`34 / 40` (`42 / 50` w/ breadth) with `Ael-Agents` vs. `15 / 40` (`21 / 50`) Standalone (`2.3×` lift)** — catching a **30× structural hoop-stress formula error** (`σ = Pr/t = 182 MPa` applied to a square duct where flat-plate bending is `σ = Pb²/(2t²) = 6,050 MPa`) and programmatically verifying 5 candidate architectures (`A`–`E`).
-> 2. **100,000 Silicon Spin Qubits Wired to Cryo-CMOS at 100 mK:** **`30 / 40` with `Ael-Agents` vs. `9 / 40` Standalone (`3.3×` lift)** — catching a **37× internal Bose–Einstein thermal photon error** (`n̄ = 3.7` vs. `0.1` at `4 K, 20 GHz`) live inside the Python verifier and closing staged attenuation (`10 dB @ 1 K + 10 dB @ 100 mK → 0.22 K, 120 µW`).
-> - **Full Article / Gist:** [`CASE_STUDY_GIST.md`](CASE_STUDY_GIST.md) | **[Live GitHub Gist](https://gist.github.com/prannesshkva/637c5b9fcad19c99cf652b9ec6ef8e91)**
+> - **Run 1 — 12-Tesla Fusion Reactor Liquid-Metal MHD Blanket:** **`34 / 40` (`42 / 50` w/ breadth) with `Ael-Agents` vs. `15 / 40` (`21 / 50`) Standalone (`2.3×` lift)** — caught a **30× structural hoop-stress formula error** (`σ = Pr/t = 182 MPa` applied to a square duct where flat-plate bending is `σ = Pb²/(2t²) = 6,050 MPa`) and programmatically verified 5 candidate architectures (`A`–`E`).
+> - **Run 2 — 100,000 Silicon Spin Qubits Wired to Cryo-CMOS at 100 mK:** **`30 / 40` with `Ael-Agents` vs. `9 / 40` Standalone (`3.3×` lift)** — caught a **37× internal Bose–Einstein thermal photon error** (`n̄ = 3.7` vs. `0.1` at `4 K, 20 GHz`) live inside the Python verifier and closed staged attenuation (`10 dB @ 1 K + 10 dB @ 100 mK → 0.22 K, 120 µW`).
+> - **Full Writeup:** [`CASE_STUDY_GIST.md`](CASE_STUDY_GIST.md) | **[Live GitHub Gist](https://gist.github.com/prannesshkva/637c5b9fcad19c99cf652b9ec6ef8e91)**
 ---
 
 Table of Contents
