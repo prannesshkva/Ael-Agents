@@ -19,7 +19,7 @@ A **cortical co-processor** is the mathematical system around a language model t
 
 **`Ael-Agents`** is a plug-and-play framework for **trainable cortical co-processing** in an open world, where agents encounter unseen scientific and engineering tasks from a single plain-English sentence. It connects two levels of optimization while keeping host LLM weights fixed:
 
-- **Task-level verification (`Wake → Focus → Prove`)** refines execution for the current prompt through a 3-stage pipeline: decompose the query into 5 orthogonal specialists via a **768-D Determinantal Point Process (`log det L_S`)**, gate strictly the top `k = 2` conflicting domains at **0 routing tokens (`-60%` context)** via exact PyTorch autograd Jacobians (`||∂y/∂w_i||_2`), and execute a single-pass Python/SciPy verification script (`Ael-Agents_programmatic_verify`) to falsify bad designs before answering.
+- **Task-level verification (`Wake → Focus → Prove`)** refines execution for the current prompt through a 3-stage pipeline: decompose the query into $N$ orthogonal specialists (default $N = 4$, dynamically configurable $2 \dots 8$) via a **768-D Determinantal Point Process (`log det L_S`)**, gate strictly the top `k = 2` conflicting domains at **0 routing tokens (`-60%` context)** via exact PyTorch autograd Jacobians (`||∂y/∂w_i||_2`), and execute a single-pass Python/SciPy verification script (`Ael-Agents_programmatic_verify`) to falsify bad designs before answering.
 - **Cortical-level recursion (`Dream-RSI Consolidation`)** updates a persistent vector of trainable 1-to-1 specialist weights (`w_1 ... w_N`) via 15 epochs of gradient descent (`F_dream <= F_wake`), consolidating high-surprise cross-domain bridges from each task to guide future reasoning.
 
 ---
