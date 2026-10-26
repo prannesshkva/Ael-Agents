@@ -5,6 +5,7 @@
 <h3 align="center">Trainable Cortical Co-Processing &amp; Code Verification for an Open World</h3>
 
 <p align="center">
+  <a href="https://github.com/prannesshkva/Ael-Agents/releases/tag/v1.2.0"><img src="https://img.shields.io/badge/Release-v1.2.0-f8fafc?style=flat&labelColor=27272a&color=f8fafc" alt="Latest Release"/></a>
   <a href="https://doi.org/10.17605/OSF.IO/7R46Z"><img src="https://img.shields.io/badge/Paper-OSF_DOI-e5e7eb?style=flat&labelColor=27272a&color=e5e7eb&logo=read-the-docs&logoColor=e5e7eb" alt="Paper"/></a>
   <a href="https://gist.github.com/prannesshkva/637c5b9fcad19c99cf652b9ec6ef8e91"><img src="https://img.shields.io/badge/Benchmarks-2--Domain_Audit-cbd5e1?style=flat&labelColor=27272a&color=cbd5e1&logo=github&logoColor=e5e7eb" alt="Benchmarks"/></a>
   <a href="mcp_server.py"><img src="https://img.shields.io/badge/MCP-Claude_%C2%B7_Cursor_%C2%B7_Windsurf-94a3b8?style=flat&labelColor=27272a&color=94a3b8" alt="MCP"/></a>
