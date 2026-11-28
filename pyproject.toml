@@ -1,0 +1,27 @@
+[project]
+name = "ael-agents"
+version = "0.3.0"
+description = "Ael-Agents: Universal Horizon & Amnesia-Breaking Autonomous Framework with Dream-RSI"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "langchain>=0.3.0",
+    "langchain-anthropic>=0.3.0",
+    "langchain-openai>=0.3.0",
+    "langgraph>=0.2.0",
+    "langsmith>=0.1.0",
+    "numpy>=2.0.0",
+    "pydantic>=2.7.0",
+    "python-dotenv>=1.0.0",
+    "rich>=13.0.0",
+]
+
+[dependency-groups]
+dev = [
+    "cython>=3.0.0",
+    "pytest>=8.0.0",
+    "setuptools>=68.0.0",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]

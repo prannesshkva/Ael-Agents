@@ -1,0 +1,34 @@
+# Environment variables & secrets (CRITICAL)
+.env
+.env.local
+*.key
+
+# Private Clean Source Vault & Armor Compiler (NEVER push to GitHub)
+.private_source_vault/
+scripts/
+.build_staging/
+
+# Virtual environments
+.venv/
+env/
+venv/
+ENV/
+
+# Python cache & artifacts
+__pycache__/
+*.pyc
+*.pyo
+*$py.class
+.pytest_cache/
+
+# Ael-Agents runtime cache & traces
+axiom_cache/
+ael_code_cache/
+ael_agents_cache/
+.ael_agents/
+*.log
+
+# IDE & Editor files
+.vscode/
+.idea/
+*.swp
